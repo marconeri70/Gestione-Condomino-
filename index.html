@@ -17,7 +17,7 @@
         <p id="condominioName">Gestione semplice di guasti, richieste e interventi</p>
       </div>
     </div>
-    <button id="installBtn" class="install-btn hidden">Installa App</button>
+    <button id="installBtn" class="install-btn hidden" aria-label="Installa App">Installa App</button>
   </header>
 
   <main>
@@ -25,25 +25,25 @@
       <h2>Segnala un problema nel condominio</h2>
       <p>Inserisci una richiesta con foto, zona interessata, priorità e descrizione. Le segnalazioni restano salvate sul dispositivo e possono essere esportate.</p>
       <div class="hero-actions">
-        <button onclick="showTab('newReport')" class="primary">Nuova segnalazione</button>
-        <button onclick="showTab('reports')" class="secondary">Vedi segnalazioni</button>
+        <button onclick="showTab('newReport')" class="primary" aria-label="Nuova segnalazione">Nuova segnalazione</button>
+        <button onclick="showTab('reports')" class="secondary" aria-label="Vedi segnalazioni">Vedi segnalazioni</button>
       </div>
     </section>
 
     <nav class="tabs">
-      <button class="tab active" data-tab="newReport" onclick="showTab('newReport')">Segnala</button>
-      <button class="tab" data-tab="reports" onclick="showTab('reports')">Archivio</button>
-      <button class="tab" data-tab="contacts" onclick="showTab('contacts')">Contatti</button>
-      <button class="tab" data-tab="settings" onclick="showTab('settings')">Impostazioni</button>
+      <button class="tab active" data-tab="newReport" onclick="showTab('newReport')" aria-label="Segnala">Segnala</button>
+      <button class="tab" data-tab="reports" onclick="showTab('reports')" aria-label="Archivio">Archivio</button>
+      <button class="tab" data-tab="contacts" onclick="showTab('contacts')" aria-label="Contatti">Contatti</button>
+      <button class="tab" data-tab="settings" onclick="showTab('settings')" aria-label="Impostazioni">Impostazioni</button>
     </nav>
 
-    <section id="newReport" class="page active">
+    <section id="newReport" class="page active" aria-labelledby="newReportTitle">
       <div class="card">
-        <h3>Nuova segnalazione</h3>
-        <label>Nome condomino / interno</label>
-        <input id="reportName" placeholder="Es. Rossi - interno 7" />
+        <h3 id="newReportTitle">Nuova segnalazione</h3>
+        <label for="reportName">Nome condomino / interno</label>
+        <input id="reportName" placeholder="Es. Rossi - interno 7" required aria-required="true" />
 
-        <label>Zona interessata</label>
+        <label for="reportArea">Zona interessata</label>
         <select id="reportArea">
           <option>Androne</option>
           <option>Scale</option>
@@ -55,7 +55,7 @@
           <option>Altro</option>
         </select>
 
-        <label>Tipo di problema</label>
+        <label for="reportType">Tipo di problema</label>
         <select id="reportType">
           <option>Guasto</option>
           <option>Perdita acqua</option>
@@ -67,7 +67,7 @@
           <option>Altro</option>
         </select>
 
-        <label>Priorità</label>
+        <label for="reportPriority">Priorità</label>
         <select id="reportPriority">
           <option>Bassa</option>
           <option>Media</option>
@@ -75,38 +75,38 @@
           <option>Urgente</option>
         </select>
 
-        <label>Descrizione</label>
-        <textarea id="reportDescription" rows="5" placeholder="Descrivi il problema in modo chiaro..."></textarea>
+        <label for="reportDescription">Descrizione</label>
+        <textarea id="reportDescription" rows="5" placeholder="Descrivi il problema in modo chiaro..." required aria-required="true"></textarea>
 
-        <label>Foto</label>
-        <input id="reportPhoto" type="file" accept="image/*" />
+        <label for="reportPhoto">Foto</label>
+        <input id="reportPhoto" type="file" accept="image/*" aria-label="Carica foto" />
         <img id="photoPreview" class="preview hidden" alt="Anteprima foto" />
 
-        <button class="primary full" onclick="saveReport()">Salva segnalazione</button>
+        <button class="primary full" onclick="saveReport()" aria-label="Salva segnalazione">Salva segnalazione</button>
       </div>
     </section>
 
-    <section id="reports" class="page">
+    <section id="reports" class="page" aria-labelledby="reportsTitle">
       <div class="toolbar">
-        <h3>Archivio segnalazioni</h3>
+        <h3 id="reportsTitle">Archivio segnalazioni</h3>
         <div>
-          <button class="secondary" onclick="exportBackup()">Esporta backup</button>
-          <label class="import-label">
+          <button class="secondary" onclick="exportBackup()" aria-label="Esporta backup">Esporta backup</button>
+          <label class="import-label" for="importBackup">
             Importa backup
-            <input type="file" accept="application/json" onchange="importBackup(event)" hidden />
+            <input id="importBackup" type="file" accept="application/json" onchange="importBackup(event)" hidden aria-label="Importa backup" />
           </label>
         </div>
       </div>
 
       <div class="filters">
-        <select id="filterStatus" onchange="renderReports()">
+        <select id="filterStatus" onchange="renderReports()" aria-label="Filtra per stato">
           <option value="">Tutti gli stati</option>
           <option>Nuova</option>
           <option>In lavorazione</option>
           <option>Risolta</option>
           <option>Archiviata</option>
         </select>
-        <select id="filterPriority" onchange="renderReports()">
+        <select id="filterPriority" onchange="renderReports()" aria-label="Filtra per priorità">
           <option value="">Tutte le priorità</option>
           <option>Bassa</option>
           <option>Media</option>
@@ -118,37 +118,37 @@
       <div id="reportsList" class="reports-list"></div>
     </section>
 
-    <section id="contacts" class="page">
+    <section id="contacts" class="page" aria-labelledby="contactsTitle">
       <div class="card">
-        <h3>Contatti amministratore</h3>
+        <h3 id="contactsTitle">Contatti amministratore</h3>
         <p><strong>Amministratore:</strong> <span id="adminNameView">Studio Condominio</span></p>
-        <p><strong>Email:</strong> <a id="adminEmailView" href="mailto:amministratore@example.com">amministratore@example.com</a></p>
-        <p><strong>Telefono:</strong> <a id="adminPhoneView" href="tel:+390000000000">+39 000 000 0000</a></p>
-        <p><strong>WhatsApp:</strong> <a id="adminWhatsappView" href="#" target="_blank">Invia messaggio</a></p>
-        <button class="primary full" onclick="sendEmailSummary()">Invia riepilogo via email</button>
+        <p><strong>Email:</strong> <a id="adminEmailView" href="mailto:amministratore@example.com" aria-label="Invia email">amministratore@example.com</a></p>
+        <p><strong>Telefono:</strong> <a id="adminPhoneView" href="tel:+390000000000" aria-label="Chiama"></a></p>
+        <p><strong>WhatsApp:</strong> <a id="adminWhatsappView" href="#" target="_blank" aria-label="Invia messaggio WhatsApp">Invia messaggio</a></p>
+        <button class="primary full" onclick="sendEmailSummary()" aria-label="Invia riepilogo via email">Invia riepilogo via email</button>
       </div>
     </section>
 
-    <section id="settings" class="page">
+    <section id="settings" class="page" aria-labelledby="settingsTitle">
       <div class="card">
-        <h3>Personalizza app</h3>
-        <label>Nome app</label>
+        <h3 id="settingsTitle">Personalizza app</h3>
+        <label for="settingAppTitle">Nome app</label>
         <input id="settingAppTitle" />
 
-        <label>Nome condominio</label>
+        <label for="settingCondominioName">Nome condominio</label>
         <input id="settingCondominioName" />
 
-        <label>Nome amministratore</label>
+        <label for="settingAdminName">Nome amministratore</label>
         <input id="settingAdminName" />
 
-        <label>Email amministratore</label>
-        <input id="settingAdminEmail" />
+        <label for="settingAdminEmail">Email amministratore</label>
+        <input id="settingAdminEmail" type="email" />
 
-        <label>Telefono / WhatsApp</label>
-        <input id="settingAdminPhone" />
+        <label for="settingAdminPhone">Telefono / WhatsApp</label>
+        <input id="settingAdminPhone" type="tel" />
 
-        <button class="primary full" onclick="saveSettings()">Salva impostazioni</button>
-        <button class="danger full" onclick="clearAllData()">Cancella tutti i dati</button>
+        <button class="primary full" onclick="saveSettings()" aria-label="Salva impostazioni">Salva impostazioni</button>
+        <button class="danger full" onclick="clearAllData()" aria-label="Cancella tutti i dati">Cancella tutti i dati</button>
       </div>
     </section>
   </main>
