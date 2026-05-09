@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Segnalazioni Condominio</title>
+  <meta name="theme-color" content="#0f4c81" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo">SC</div>
+      <div>
+        <h1 id="appTitle">Segnalazioni Condominio</h1>
+        <p id="condominioName">Gestione semplice di guasti, richieste e interventi</p>
+      </div>
+    </div>
+    <button id="installBtn" class="install-btn hidden">Installa App</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h2>Segnala un problema nel condominio</h2>
+      <p>Inserisci una richiesta con foto, zona interessata, priorità e descrizione. Le segnalazioni restano salvate sul dispositivo e possono essere esportate.</p>
+      <div class="hero-actions">
+        <button onclick="showTab('newReport')" class="primary">Nuova segnalazione</button>
+        <button onclick="showTab('reports')" class="secondary">Vedi segnalazioni</button>
+      </div>
+    </section>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="newReport" onclick="showTab('newReport')">Segnala</button>
+      <button class="tab" data-tab="reports" onclick="showTab('reports')">Archivio</button>
+      <button class="tab" data-tab="contacts" onclick="showTab('contacts')">Contatti</button>
+      <button class="tab" data-tab="settings" onclick="showTab('settings')">Impostazioni</button>
+    </nav>
+
+    <section id="newReport" class="page active">
+      <div class="card">
+        <h3>Nuova segnalazione</h3>
+        <label>Nome condomino / interno</label>
+        <input id="reportName" placeholder="Es. Rossi - interno 7" />
+
+        <label>Zona interessata</label>
+        <select id="reportArea">
+          <option>Androne</option>
+          <option>Scale</option>
+          <option>Ascensore</option>
+          <option>Garage</option>
+          <option>Cortile</option>
+          <option>Terrazzo</option>
+          <option>Locale contatori</option>
+          <option>Altro</option>
+        </select>
+
+        <label>Tipo di problema</label>
+        <select id="reportType">
+          <option>Guasto</option>
+          <option>Perdita acqua</option>
+          <option>Illuminazione</option>
+          <option>Pulizia</option>
+          <option>Sicurezza</option>
+          <option>Rumori / disturbo</option>
+          <option>Richiesta manutenzione</option>
+          <option>Altro</option>
+        </select>
+
+        <label>Priorità</label>
+        <select id="reportPriority">
+          <option>Bassa</option>
+          <option>Media</option>
+          <option>Alta</option>
+          <option>Urgente</option>
+        </select>
+
+        <label>Descrizione</label>
+        <textarea id="reportDescription" rows="5" placeholder="Descrivi il problema in modo chiaro..."></textarea>
+
+        <label>Foto</label>
+        <input id="reportPhoto" type="file" accept="image/*" />
+        <img id="photoPreview" class="preview hidden" alt="Anteprima foto" />
+
+        <button class="primary full" onclick="saveReport()">Salva segnalazione</button>
+      </div>
+    </section>
+
+    <section id="reports" class="page">
+      <div class="toolbar">
+        <h3>Archivio segnalazioni</h3>
+        <div>
+          <button class="secondary" onclick="exportBackup()">Esporta backup</button>
+          <label class="import-label">
+            Importa backup
+            <input type="file" accept="application/json" onchange="importBackup(event)" hidden />
+          </label>
+        </div>
+      </div>
+
+      <div class="filters">
+        <select id="filterStatus" onchange="renderReports()">
+          <option value="">Tutti gli stati</option>
+          <option>Nuova</option>
+          <option>In lavorazione</option>
+          <option>Risolta</option>
+          <option>Archiviata</option>
+        </select>
+        <select id="filterPriority" onchange="renderReports()">
+          <option value="">Tutte le priorità</option>
+          <option>Bassa</option>
+          <option>Media</option>
+          <option>Alta</option>
+          <option>Urgente</option>
+        </select>
+      </div>
+
+      <div id="reportsList" class="reports-list"></div>
+    </section>
+
+    <section id="contacts" class="page">
+      <div class="card">
+        <h3>Contatti amministratore</h3>
+        <p><strong>Amministratore:</strong> <span id="adminNameView">Studio Condominio</span></p>
+        <p><strong>Email:</strong> <a id="adminEmailView" href="mailto:amministratore@example.com">amministratore@example.com</a></p>
+        <p><strong>Telefono:</strong> <a id="adminPhoneView" href="tel:+390000000000">+39 000 000 0000</a></p>
+        <p><strong>WhatsApp:</strong> <a id="adminWhatsappView" href="#" target="_blank">Invia messaggio</a></p>
+        <button class="primary full" onclick="sendEmailSummary()">Invia riepilogo via email</button>
+      </div>
+    </section>
+
+    <section id="settings" class="page">
+      <div class="card">
+        <h3>Personalizza app</h3>
+        <label>Nome app</label>
+        <input id="settingAppTitle" />
+
+        <label>Nome condominio</label>
+        <input id="settingCondominioName" />
+
+        <label>Nome amministratore</label>
+        <input id="settingAdminName" />
+
+        <label>Email amministratore</label>
+        <input id="settingAdminEmail" />
+
+        <label>Telefono / WhatsApp</label>
+        <input id="settingAdminPhone" />
+
+        <button class="primary full" onclick="saveSettings()">Salva impostazioni</button>
+        <button class="danger full" onclick="clearAllData()">Cancella tutti i dati</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Template PWA - Segnalazioni Condominio</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
