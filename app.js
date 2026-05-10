@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, where, onSnapshot, orderBy, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, where, onSnapshot, orderBy, doc, updateDoc, arrayUnion, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAaRvdsTWGCJK59lbbGzU6qnoaJrwCnaJI",
@@ -14,6 +14,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// --- ATTIVAZIONE MODALITÀ BUNKER (Persistenza Offline) ---
+enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code == 'failed-precondition') {
+    console.warn("Attenzione: App aperta in più schede. Modalità offline limitata.");
+  } else if (err.code == 'unimplemented') {
+    console.warn("Il browser corrente non supporta il database offline profondo.");
+  }
+});
 
 let currentUserUid = null;
 let myReports = [];
@@ -78,7 +87,7 @@ window.showTab = (tabId) => {
   window.scrollTo(0, 0);
 };
 
-// --- MOTORE DI COMPRESSIONE ESTREMA ---
+// Algoritmo Compressione Foto Estrema
 document.getElementById("reportPhoto")?.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -88,14 +97,12 @@ document.getElementById("reportPhoto")?.addEventListener("change", (e) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      // BYPASS LIMITE FIRESTORE: Riduzione a max 600px di larghezza
       const scale = Math.min(1, 600 / img.width);
       canvas.width = img.width * scale; 
       canvas.height = img.height * scale;
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
       
       const preview = document.getElementById("photoPreview");
-      // BYPASS LIMITE FIRESTORE: Compressione JPEG al 50%
       preview.src = canvas.toDataURL("image/jpeg", 0.5);
       preview.classList.remove("hidden");
     };
@@ -104,7 +111,8 @@ document.getElementById("reportPhoto")?.addEventListener("change", (e) => {
   reader.readAsDataURL(file);
 });
 
-window.saveReport = async () => {
+// Motore Invio Resiliente (No-Block)
+window.saveReport = () => {
   const name = document.getElementById("reportName").value.trim();
   const description = document.getElementById("reportDescription").value.trim();
 
@@ -112,21 +120,17 @@ window.saveReport = async () => {
 
   const btn = document.querySelector("#newReport button.primary");
   btn.disabled = true;
-  btn.textContent = "Invio in corso...";
 
   try {
     const photoData = document.getElementById("photoPreview").src.startsWith("data:") ? document.getElementById("photoPreview").src : "";
     
-    // Controllo di sicurezza prima dell'invio (Firestore max 1MB)
-    // Se, per un calcolo anomalo, il file superasse gli 800KB, blocchiamo l'invio per evitare crash del database.
     if(photoData && photoData.length > 800000) {
-      showToast("Immagine troppo complessa. Riprova con un'altra inquadratura.", "error");
+      showToast("Foto troppo complessa. Riprova con un'altra inquadratura.", "error");
       btn.disabled = false;
-      btn.textContent = "Invia Segnalazione";
       return;
     }
 
-    await addDoc(collection(db, "reports"), {
+    const payload = {
       uid: currentUserUid,
       createdAt: new Date().toISOString(),
       name, description,
@@ -136,31 +140,42 @@ window.saveReport = async () => {
       status: "Nuova",
       messages: [],
       photo: photoData
-    });
+    };
 
-    showToast("Segnalazione inviata con successo!", "success");
+    // Logica di feedback in base allo stato della rete
+    if (!navigator.onLine) {
+      showToast("Modalità Offline: Segnalazione salvata. Verrà inviata in automatico.", "info");
+    } else {
+      showToast("Segnalazione inviata con successo!", "success");
+    }
+
+    // FIRE AND FORGET: Firebase gestisce la coda in background. L'app non si blocca mai.
+    addDoc(collection(db, "reports"), payload);
+
+    // Reset interfaccia immediato
     document.getElementById("reportName").value = "";
     document.getElementById("reportDescription").value = "";
     document.getElementById("photoPreview").classList.add("hidden");
     window.showTab("reports");
+
   } catch (e) {
     console.error(e);
-    showToast("Errore durante l'invio", "error");
+    showToast("Errore di sistema", "error");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Invia Segnalazione";
   }
 };
 
 function listenToMyReports() {
   const q = query(collection(db, "reports"), where("uid", "==", currentUserUid), orderBy("createdAt", "desc"));
-  onSnapshot(q, (snapshot) => {
+  onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
     myReports = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
     window.renderReportsUI();
   });
 }
 
-window.addMessage = async (reportId) => {
+// Chat con supporto offline
+window.addMessage = (reportId) => {
   const input = document.getElementById(`chat-input-${reportId}`);
   const text = input.value.trim();
   if (!text) return;
@@ -169,13 +184,17 @@ window.addMessage = async (reportId) => {
   input.disabled = true; btn.disabled = true;
 
   try {
-    await updateDoc(doc(db, "reports", reportId), {
+    if (!navigator.onLine) showToast("Offline: Messaggio in coda.", "info");
+
+    // Fire and forget
+    updateDoc(doc(db, "reports", reportId), {
       messages: arrayUnion({ sender: 'Condomino', text: text, date: new Date().toISOString() })
     });
+    
     input.value = "";
   } catch (error) {
     console.error(error);
-    showToast("Impossibile inviare il messaggio", "error");
+    showToast("Errore nell'invio", "error");
   } finally {
     input.disabled = false; btn.disabled = false;
   }
