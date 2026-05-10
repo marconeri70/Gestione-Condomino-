@@ -78,6 +78,32 @@ window.showTab = (tabId) => {
   window.scrollTo(0, 0);
 };
 
+// --- MOTORE DI COMPRESSIONE ESTREMA ---
+document.getElementById("reportPhoto")?.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      // BYPASS LIMITE FIRESTORE: Riduzione a max 600px di larghezza
+      const scale = Math.min(1, 600 / img.width);
+      canvas.width = img.width * scale; 
+      canvas.height = img.height * scale;
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      const preview = document.getElementById("photoPreview");
+      // BYPASS LIMITE FIRESTORE: Compressione JPEG al 50%
+      preview.src = canvas.toDataURL("image/jpeg", 0.5);
+      preview.classList.remove("hidden");
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
 window.saveReport = async () => {
   const name = document.getElementById("reportName").value.trim();
   const description = document.getElementById("reportDescription").value.trim();
@@ -89,6 +115,17 @@ window.saveReport = async () => {
   btn.textContent = "Invio in corso...";
 
   try {
+    const photoData = document.getElementById("photoPreview").src.startsWith("data:") ? document.getElementById("photoPreview").src : "";
+    
+    // Controllo di sicurezza prima dell'invio (Firestore max 1MB)
+    // Se, per un calcolo anomalo, il file superasse gli 800KB, blocchiamo l'invio per evitare crash del database.
+    if(photoData && photoData.length > 800000) {
+      showToast("Immagine troppo complessa. Riprova con un'altra inquadratura.", "error");
+      btn.disabled = false;
+      btn.textContent = "Invia Segnalazione";
+      return;
+    }
+
     await addDoc(collection(db, "reports"), {
       uid: currentUserUid,
       createdAt: new Date().toISOString(),
@@ -97,8 +134,8 @@ window.saveReport = async () => {
       type: document.getElementById("reportType").value,
       priority: document.getElementById("reportPriority").value,
       status: "Nuova",
-      messages: [], // Array inizializzato per la chat
-      photo: document.getElementById("photoPreview").src.startsWith("data:") ? document.getElementById("photoPreview").src : ""
+      messages: [],
+      photo: photoData
     });
 
     showToast("Segnalazione inviata con successo!", "success");
@@ -107,6 +144,7 @@ window.saveReport = async () => {
     document.getElementById("photoPreview").classList.add("hidden");
     window.showTab("reports");
   } catch (e) {
+    console.error(e);
     showToast("Errore durante l'invio", "error");
   } finally {
     btn.disabled = false;
@@ -122,7 +160,6 @@ function listenToMyReports() {
   });
 }
 
-// LOGICA CHAT: Aggiunta nuovo messaggio
 window.addMessage = async (reportId) => {
   const input = document.getElementById(`chat-input-${reportId}`);
   const text = input.value.trim();
@@ -133,11 +170,7 @@ window.addMessage = async (reportId) => {
 
   try {
     await updateDoc(doc(db, "reports", reportId), {
-      messages: arrayUnion({
-        sender: 'Condomino',
-        text: text,
-        date: new Date().toISOString()
-      })
+      messages: arrayUnion({ sender: 'Condomino', text: text, date: new Date().toISOString() })
     });
     input.value = "";
   } catch (error) {
@@ -161,7 +194,6 @@ window.renderReportsUI = () => {
   }
 
   list.innerHTML = filtered.map(r => {
-    // Generazione dinamica della cronologia messaggi
     const messagesHtml = (r.messages || []).map(m => `
       <div class="msg ${m.sender === 'Amministratore' ? 'admin' : 'user'}">
         <strong>${m.sender}</strong><br>${escapeHtml(m.text)}
@@ -182,7 +214,7 @@ window.renderReportsUI = () => {
           <span class="badge" style="background: #e7f3ff; color: #007bff">${r.status}</span>
         </div>
         <p style="margin: 10px 0 font-weight: 600;">${escapeHtml(r.description)}</p>
-        ${r.photo ? `<img src="${r.photo}" style="width:100%; border-radius:10px; margin-bottom: 10px;">` : ""}
+        ${r.photo ? `<img src="${r.photo}" style="width:100%; border-radius:10px; margin-bottom: 10px; border: 1px solid #eee;">` : ""}
         
         <div class="chat-box">
           <div class="chat-history">
@@ -197,25 +229,6 @@ window.renderReportsUI = () => {
     `;
   }).join("");
 };
-
-// Utils
-document.getElementById("reportPhoto")?.addEventListener("change", (e) => {
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const scale = Math.min(1, 1000 / img.width);
-      canvas.width = img.width * scale; canvas.height = img.height * scale;
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      const preview = document.getElementById("photoPreview");
-      preview.src = canvas.toDataURL("image/jpeg", 0.7);
-      preview.classList.remove("hidden");
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(e.target.files[0]);
-});
 
 function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, match => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[match]));
