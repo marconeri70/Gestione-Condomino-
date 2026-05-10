@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Centro di Comando - Segnalazioni</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Stili specifici per l'admin, per isolare la logica */
+    #adminDashboard { display: none; }
+    .login-container { max-width: 400px; margin: 100px auto; padding: 30px; }
+    .grid-dashboard { display: grid; grid-template-columns: 250px 1fr; gap: 20px; height: 100vh; }
+    .sidebar { background: var(--primary-dark); color: white; padding: 20px; }
+  </style>
+</head>
+<body>
+
+  <div id="loginScreen" class="card login-container">
+    <h2>Accesso Amministratore</h2>
+    <input type="email" id="adminEmail" placeholder="Email Amministratore" />
+    <input type="password" id="adminPassword" placeholder="Password" />
+    <button class="primary full" onclick="loginAdmin()">Accedi al Pannello</button>
+    <p id="loginError" class="hidden" style="color: red; margin-top: 10px;"></p>
+  </div>
+
+  <div id="adminDashboard" class="grid-dashboard">
+    <aside class="sidebar">
+      <h2>Studio Condominio</h2>
+      <p>Pannello di Controllo</p>
+      <button class="secondary full" onclick="logoutAdmin()" style="margin-top: auto;">Disconnetti</button>
+    </aside>
+    <main style="padding: 20px; overflow-y: auto;">
+      <div class="toolbar">
+        <h3>Gestione Segnalazioni in Tempo Reale</h3>
+      </div>
+      <div id="adminReportsList" class="reports-list">
+        </div>
+    </main>
+  </div>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>
