@@ -3,38 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Centro di Comando - Segnalazioni</title>
+  <title>Admin - Segnalazioni Condominio</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* Stili specifici per l'admin, per isolare la logica */
-    #adminDashboard { display: none; }
-    .login-container { max-width: 400px; margin: 100px auto; padding: 30px; }
-    .grid-dashboard { display: grid; grid-template-columns: 250px 1fr; gap: 20px; height: 100vh; }
-    .sidebar { background: var(--primary-dark); color: white; padding: 20px; }
+    body { background-color: #e8f2fb; }
+    #adminDashboard { display: none; grid-template-columns: 280px 1fr; height: 100vh; }
+    .sidebar { background: var(--primary-dark); color: white; padding: 30px 20px; display: flex; flex-direction: column; }
+    .sidebar h2 { margin-bottom: 5px; font-size: 22px; }
+    .sidebar p { opacity: 0.7; font-size: 14px; margin-bottom: 30px; }
+    .login-container { max-width: 400px; margin: 10vh auto; padding: 40px; text-align: center; }
+    .dashboard-content { padding: 30px; overflow-y: auto; }
+    @media (max-width: 800px) {
+      #adminDashboard { grid-template-columns: 1fr; }
+      .sidebar { height: auto; padding: 20px; }
+    }
   </style>
 </head>
 <body>
 
   <div id="loginScreen" class="card login-container">
-    <h2>Accesso Amministratore</h2>
-    <input type="email" id="adminEmail" placeholder="Email Amministratore" />
-    <input type="password" id="adminPassword" placeholder="Password" />
+    <div class="logo" style="margin: 0 auto 20px auto;">SC</div>
+    <h2 style="margin-bottom: 20px;">Accesso Admin</h2>
+    <input type="email" id="adminEmail" placeholder="Email Amministratore" style="margin-bottom: 10px;" />
+    <input type="password" id="adminPassword" placeholder="Password" style="margin-bottom: 20px;" />
     <button class="primary full" onclick="loginAdmin()">Accedi al Pannello</button>
-    <p id="loginError" class="hidden" style="color: red; margin-top: 10px;"></p>
+    <p id="loginError" class="hidden" style="color: var(--danger); margin-top: 15px; font-weight: bold;"></p>
   </div>
 
-  <div id="adminDashboard" class="grid-dashboard">
+  <div id="adminDashboard">
     <aside class="sidebar">
       <h2>Studio Condominio</h2>
       <p>Pannello di Controllo</p>
-      <button class="secondary full" onclick="logoutAdmin()" style="margin-top: auto;">Disconnetti</button>
+      
+      <div style="margin-top: auto;">
+        <button class="secondary full" onclick="logoutAdmin()">Disconnetti Sicuro</button>
+      </div>
     </aside>
-    <main style="padding: 20px; overflow-y: auto;">
-      <div class="toolbar">
+
+    <main class="dashboard-content">
+      
+      <div class="toolbar" style="margin-bottom: 20px;">
         <h3>Gestione Segnalazioni in Tempo Reale</h3>
       </div>
       <div id="adminReportsList" class="reports-list">
-        </div>
+        <p>Caricamento dati...</p>
+      </div>
+
+      <hr style="margin: 40px 0; border: 1px solid #dde5ef;">
+
+      <div class="card" style="max-width: 600px;">
+        <h3>Impostazioni Globali App</h3>
+        <p style="color: var(--muted); font-size: 14px; margin-bottom: 20px;">
+          Le modifiche salvate qui aggiorneranno istantaneamente l'app sui telefoni di tutti i condomini.
+        </p>
+        
+        <label>Nome app (es. Condominio Roma)</label>
+        <input type="text" id="admin_settingAppTitle" />
+
+        <label>Sottotitolo / Info</label>
+        <input type="text" id="admin_settingCondominioName" />
+
+        <label>Nome Amministratore</label>
+        <input type="text" id="admin_settingAdminName" />
+
+        <label>Email di Contatto</label>
+        <input type="email" id="admin_settingAdminEmail" />
+
+        <label>Telefono / WhatsApp (formato +39...)</label>
+        <input type="tel" id="admin_settingAdminPhone" />
+
+        <button class="primary full" onclick="saveGlobalSettings()">Salva e Distribuisci Dati</button>
+      </div>
+
     </main>
   </div>
 
