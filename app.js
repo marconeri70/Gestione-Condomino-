@@ -2,55 +2,58 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, where, onSnapshot, orderBy, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// 1. CONFIGURAZIONE FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyAaRvdsTWGCJK59lbbGzU6qnoaJrwCnaJI",
   authDomain: "condominio-admin-1abcf.firebaseapp.com",
   projectId: "condominio-admin-1abcf",
   storageBucket: "condominio-admin-1abcf.firebasestorage.app",
   messagingSenderId: "944250769876",
-  appId: "1:944250769876:web:d53d8b5d4ef789e5764641"
+  appId: "1:944250769876:web:d53d8b5d4ef789e5764641",
+  measurementId: "G-210EP3Q2T9"
 };
 
+// Inizializzazione Servizi
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Variabili di Stato
 let deferredPrompt = null;
 let currentPhotoBase64 = "";
 let currentUserUid = null;
 let myReports = [];
 let adminEmailCache = "";
 
-// 1. IL GUARDIANO SILENZIOSO (Auth Anonima)
+// 2. IL GUARDIANO SILENZIOSO (Autenticazione Anonima)
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUserUid = user.uid;
-    listenToMyReports();
+    listenToMyReports(); // Avvia il tunnel dati per l'archivio
   } else {
     signInAnonymously(auth).catch((error) => {
-      console.error("Autenticazione fallita:", error);
-      alert("Connessione ai server fallita. Ricarica la pagina.");
+      console.error("Errore critico Auth:", error);
     });
   }
 });
 
-// 2. LETTURA IMPOSTAZIONI GLOBALI
+// 3. LETTURA IMPOSTAZIONI GLOBALI (Single Source of Truth)
 function listenToGlobalSettings() {
   const settingsRef = doc(db, "settings", "global_config");
   
   onSnapshot(settingsRef, (docSnap) => {
     const s = docSnap.exists() ? docSnap.data() : {
       appTitle: "Segnalazioni Condominio",
-      condominioName: "In attesa configurazione admin...",
-      adminName: "Da configurare",
-      adminEmail: "test@example.com",
+      condominioName: "Configurazione in corso...",
+      adminName: "Studio Amministrativo",
+      adminEmail: "support@example.com",
       adminPhone: "+390000000000"
     };
 
+    // Aggiornamento dinamico della UI
     document.title = s.appTitle;
     document.getElementById("appTitle").textContent = s.appTitle;
     document.getElementById("condominioName").textContent = s.condominioName;
-
     adminEmailCache = s.adminEmail;
 
     if(document.getElementById("adminNameView")) document.getElementById("adminNameView").textContent = s.adminName;
@@ -68,7 +71,7 @@ function listenToGlobalSettings() {
   });
 }
 
-// 3. BOOTSTRAP APPLICAZIONE
+// 4. BOOTSTRAP E PWA
 window.addEventListener("load", () => {
   listenToGlobalSettings();
   if ("serviceWorker" in navigator) {
@@ -76,14 +79,13 @@ window.addEventListener("load", () => {
   }
 });
 
-// 4. PWA E UI LOGIC
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredPrompt = e;
   document.getElementById("installBtn").classList.remove("hidden");
 });
 
-document.getElementById("installBtn").addEventListener("click", async () => {
+document.getElementById("installBtn")?.addEventListener("click", async () => {
   if (!deferredPrompt) return;
   deferredPrompt.prompt();
   await deferredPrompt.userChoice;
@@ -91,7 +93,8 @@ document.getElementById("installBtn").addEventListener("click", async () => {
   document.getElementById("installBtn").classList.add("hidden");
 });
 
-document.getElementById("reportPhoto").addEventListener("change", async (event) => {
+// Gestione Foto
+document.getElementById("reportPhoto")?.addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
   currentPhotoBase64 = await resizeImage(file, 1200, 0.75);
@@ -100,6 +103,7 @@ document.getElementById("reportPhoto").addEventListener("change", async (event) 
   preview.classList.remove("hidden");
 });
 
+// 5. NAVIGAZIONE TABS
 window.showTab = (tabId) => {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -109,9 +113,9 @@ window.showTab = (tabId) => {
   if (tabId === "reports") window.renderReportsUI();
 };
 
-// 5. INVIO SEGNALAZIONE AL SERVER
+// 6. MOTORE DI INVIO (Firestore Write)
 window.saveReport = async () => {
-  if (!currentUserUid) return alert("Inizializzazione connessione in corso. Riprova tra un istante.");
+  if (!currentUserUid) return alert("Connessione al server non ancora pronta.");
 
   const name = document.getElementById("reportName").value.trim();
   const area = document.getElementById("reportArea").value;
@@ -119,7 +123,7 @@ window.saveReport = async () => {
   const priority = document.getElementById("reportPriority").value;
   const description = document.getElementById("reportDescription").value.trim();
 
-  if (!name || !description) return alert("Il nome/interno e la descrizione sono obbligatori.");
+  if (!name || !description) return alert("Nome e descrizione sono obbligatori.");
 
   const btn = document.querySelector("#newReport button.primary");
   const originalText = btn.textContent;
@@ -135,6 +139,7 @@ window.saveReport = async () => {
       photo: currentPhotoBase64
     });
 
+    // Reset Form
     document.getElementById("reportName").value = "";
     document.getElementById("reportDescription").value = "";
     document.getElementById("reportPhoto").value = "";
@@ -145,26 +150,41 @@ window.saveReport = async () => {
     window.showTab("reports");
   } catch (error) {
     console.error("Errore salvataggio:", error);
-    alert("Errore di rete. Controlla la connessione e riprova.");
+    alert("Errore durante l'invio. Riprova.");
   } finally {
     btn.textContent = originalText;
     btn.disabled = false;
   }
 };
 
-// 6. ASCOLTO SEGNALAZIONI PERSONALI
+// 7. ASCOLTO ARCHIVIO PERSONALE (Migliorato con gestione Indice)
 function listenToMyReports() {
-  const q = query(collection(db, "reports"), where("uid", "==", currentUserUid), orderBy("createdAt", "desc"));
+  const list = document.getElementById("reportsList");
+  if(!list) return;
+
+  const q = query(
+    collection(db, "reports"), 
+    where("uid", "==", currentUserUid), 
+    orderBy("createdAt", "desc")
+  );
+
   onSnapshot(q, (snapshot) => {
     myReports = [];
     snapshot.forEach(doc => myReports.push({ id: doc.id, ...doc.data() }));
-    if (document.getElementById("reports").classList.contains("active")) window.renderReportsUI();
-  }, (error) => console.error("Errore database:", error));
+    window.renderReportsUI();
+  }, (error) => {
+    console.error("Errore Firestore:", error);
+    if (error.code === 'failed-precondition') {
+      list.innerHTML = `<div class="empty">Configurazione database in corso (Indice mancante). L'archivio sarà disponibile tra pochi minuti.</div>`;
+    }
+  });
 }
 
-// 7. RENDERIZZAZIONE
+// 8. RENDERIZZAZIONE UI
 window.renderReportsUI = () => {
   const list = document.getElementById("reportsList");
+  if (!list) return;
+
   const statusFilter = document.getElementById("filterStatus").value;
   const priorityFilter = document.getElementById("filterPriority").value;
 
@@ -187,26 +207,26 @@ window.renderReportsUI = () => {
         <div class="report-head">
           <div>
             <h3>${escapeHtml(report.type)} - ${escapeHtml(report.area)}</h3>
-            <p><strong>${escapeHtml(report.name)}</strong> • ${date}</p>
+            <p style="font-size: 0.9em; color: var(--muted)"><strong>${escapeHtml(report.name)}</strong> • ${date}</p>
           </div>
         </div>
         <div class="badges">
-          <span class="badge priority-${report.priority}">Priorità: ${report.priority}</span>
-          <span class="badge status-${report.status}">Stato: ${report.status}</span>
+          <span class="badge priority-${report.priority}">${report.priority}</span>
+          <span class="badge status-${report.status}">${report.status}</span>
         </div>
-        <p>${escapeHtml(report.description)}</p>
-        ${report.photo ? `<img src="${report.photo}" alt="Foto segnalazione" style="width:100%; border-radius:10px; margin-top:10px;">` : ""}
+        <p style="margin-top:10px;">${escapeHtml(report.description)}</p>
+        ${report.photo ? `<img src="${report.photo}" alt="Foto" style="width:100%; border-radius:12px; margin-top:10px; border: 1px solid #eee;">` : ""}
       </article>
     `;
   }).join("");
 };
 
+// Utility
 window.sendEmailSummary = () => {
-  const body = myReports.slice(0, 20).map(r => `- ${r.area} | ${r.type} | ${r.status} | ${r.description}`).join("\n");
-  window.location.href = `mailto:${adminEmailCache}?subject=Riepilogo mie segnalazioni&body=${encodeURIComponent(body || "Nessuna segnalazione.")}`;
+  const body = myReports.map(r => `- ${r.area} | ${r.type} | Stato: ${r.status}`).join("\n");
+  window.location.href = `mailto:${adminEmailCache}?subject=Riepilogo Segnalazioni&body=${encodeURIComponent(body || "Nessuna segnalazione.")}`;
 };
 
-// UTILS
 function resizeImage(file, maxWidth, quality) {
   return new Promise(resolve => {
     const reader = new FileReader();
@@ -225,6 +245,10 @@ function resizeImage(file, maxWidth, quality) {
     reader.readAsDataURL(file);
   });
 }
+
 function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, match => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[match]));
 }
+
+// Esposizione globale
+window.renderReportsUI = renderReportsUI;
