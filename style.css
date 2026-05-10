@@ -2,492 +2,153 @@
   --primary: #0f4c81;
   --primary-dark: #08345a;
   --accent: #f2b705;
-  --bg: #f4f7fb;
+  --bg: #f8fafd;
   --card: #ffffff;
-  --text: #172033;
-  --muted: #667085;
-  --danger: #c62828;
-  --success: #16794c;
-  --radius: 20px;
+  --text: #1a1c1e;
+  --muted: #6c757d;
+  --danger: #d93025;
+  --success: #188038;
+  --radius: 16px;
+  --nav-height: 70px;
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 body {
   margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
-}
-
-.app-header {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  color: white;
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  box-shadow: 0 8px 24px rgba(0,0,0,.18);
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.logo {
-  width: 58px;
-  height: 58px;
-  border-radius: 18px;
-  background: white;
-  color: var(--primary);
-  display: grid;
-  place-items: center;
-  font-weight: 900;
-  font-size: 22px;
-  box-shadow: inset 0 0 0 4px rgba(15,76,129,.15);
-}
-
-h1, h2, h3, p { margin-top: 0; }
-
-h1 {
-  font-size: 22px;
-  margin-bottom: 4px;
-}
-
-.app-header p {
-  margin: 0;
-  color: rgba(255,255,255,.85);
-  font-size: 14px;
-}
-
-main {
-  width: min(1100px, 94%);
-  margin: 24px auto;
-}
-
-.hero {
-  background: linear-gradient(135deg, white, #e8f2fb);
-  padding: 26px;
-  border-radius: var(--radius);
-  box-shadow: 0 10px 28px rgba(15, 76, 129, .12);
-  margin-bottom: 18px;
-}
-
-.hero h2 {
-  font-size: 30px;
-  color: var(--primary-dark);
-  margin-bottom: 8px;
-}
-
-.hero p {
-  color: var(--muted);
   line-height: 1.5;
 }
 
-.hero-actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.tabs {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin: 18px 0;
-}
-
-.tab {
-  border: 0;
-  border-radius: 14px;
-  background: #dfe8f3;
-  padding: 14px 10px;
-  font-weight: 700;
-  cursor: pointer;
-  color: var(--primary-dark);
-}
-
-.tab.active {
+/* Header */
+.app-header {
   background: var(--primary);
   color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-.tab:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+.logo {
+  width: 40px; height: 40px; background: white; color: var(--primary);
+  border-radius: 10px; display: grid; place-items: center; font-weight: 900;
 }
 
-.page { display: none; }
+h1 { font-size: 18px; margin: 0; }
+.app-header p { font-size: 12px; margin: 0; opacity: 0.8; }
+
+/* Main Layout */
+main {
+  padding: 15px 15px calc(var(--nav-height) + 20px) 15px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.page { display: none; animation: fadeIn 0.3s ease; }
 .page.active { display: block; }
 
-.card, .toolbar, .filters, .report {
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Cards & Elements */
+.card {
   background: var(--card);
   border-radius: var(--radius);
   padding: 20px;
-  box-shadow: 0 8px 22px rgba(0,0,0,.08);
+  margin-bottom: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.02);
 }
 
-label {
-  display: block;
-  font-weight: 700;
-  margin: 14px 0 6px;
-}
-
-input, select, textarea {
-  width: 100%;
-  padding: 14px;
-  border-radius: 14px;
-  border: 1px solid #ccd6e3;
-  font-size: 16px;
-  background: white;
-}
-
-input:focus, select:focus, textarea:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-textarea { resize: vertical; }
-
-button, .import-label {
-  border: 0;
-  border-radius: 14px;
-  padding: 12px 16px;
+.action-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
   cursor: pointer;
-  font-weight: 800;
-  display: inline-block;
-  text-align: center;
-  text-decoration: none;
+  transition: transform 0.2s;
 }
 
-button:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+.action-card:active { transform: scale(0.98); }
+
+.icon-circle {
+  width: 50px; height: 50px; border-radius: 50%; background: #e8f0fe;
+  display: grid; place-items: center; font-size: 20px;
 }
 
-.primary {
-  background: var(--primary);
-  color: white;
+/* Forms */
+label { display: block; font-weight: 600; margin: 15px 0 5px; font-size: 14px; }
+input, select, textarea {
+  width: 100%; padding: 12px; border-radius: 12px;
+  border: 1px solid #dee2e6; background: #fdfdfd; font-size: 16px;
 }
 
-.secondary, .import-label {
-  background: #e5ecf5;
-  color: var(--primary-dark);
+.file-input-label {
+  display: block; padding: 15px; border: 2px dashed #cbd5e0;
+  border-radius: 12px; text-align: center; cursor: pointer; color: var(--primary);
+  margin-top: 15px; font-weight: 600;
+}
+.file-input-label input { display: none; }
+
+button {
+  border: 0; border-radius: 12px; padding: 14px 20px;
+  font-weight: 700; cursor: pointer; transition: 0.2s;
+}
+.primary { background: var(--primary); color: white; }
+.secondary { background: #e9ecef; color: var(--text); }
+.full { width: 100%; }
+button:active { opacity: 0.8; }
+
+/* Bottom Nav */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: var(--nav-height); background: white;
+  display: flex; justify-content: space-around; align-items: center;
+  border-top: 1px solid #eee; padding-bottom: env(safe-area-inset-bottom);
+  z-index: 1000;
 }
 
-.danger {
-  background: var(--danger);
-  color: white;
-  margin-top: 12px;
+.nav-item {
+  background: none; border: 0; display: flex; flex-direction: column;
+  align-items: center; color: var(--muted); gap: 4px; padding: 10px;
 }
 
-.install-btn {
-  background: var(--accent);
-  color: #2d2200;
+.nav-item.active { color: var(--primary); }
+.nav-icon { font-size: 20px; }
+.nav-label { font-size: 11px; font-weight: 600; }
+
+/* Toast Notifications */
+.toast-container {
+  position: fixed; bottom: 90px; left: 20px; right: 20px;
+  z-index: 9999; pointer-events: none;
 }
 
-.full {
-  width: 100%;
-  margin-top: 18px;
+.toast {
+  background: #323232; color: white; padding: 12px 20px;
+  border-radius: 10px; margin-top: 10px; font-size: 14px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  animation: slideUp 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  display: flex; align-items: center; gap: 10px;
 }
 
-.preview {
-  width: 100%;
-  max-height: 260px;
-  object-fit: cover;
-  border-radius: 16px;
-  margin-top: 12px;
-  border: 1px solid #dde5ef;
+.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); }
+
+@keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* Report Cards */
+.report { border-left: 6px solid var(--primary); position: relative; }
+.report.urgent { border-left-color: var(--danger); }
+.report.done { border-left-color: var(--success); opacity: 0.8; }
+
+.badge {
+  display: inline-block; padding: 4px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; background: #f1f3f5;
 }
 
 .hidden { display: none !important; }
-
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
-}
-
-.filters {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.reports-list {
-  display: grid;
-  gap: 14px;
-}
-
-.report {
-  border-left: 8px solid var(--primary);
-}
-
-.report.urgent { border-left-color: var(--danger); }
-.report.high { border-left-color: #f57c00; }
-.report.done { border-left-color: var(--success); }
-
-.report-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: start;
-}
-
-.badges {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin: 10px 0;
-}
-
-.badge {
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 13px;
-  font-weight: 800;
-  background: #edf2f8;
-  color: var(--primary-dark);
-}
-
-.badge.priority-Urgente { background: #ffebee; color: var(--danger); }
-.badge.priority-Alta { background: #fff3e0; color: #b65300; }
-.badge.status-Risolta { background: #e8f5e9; color: var(--success); }
-
-.report img {
-  width: 100%;
-  max-height: 300px;
-  object-fit: cover;
-  border-radius: 16px;
-  margin-top: 10px;
-}
-
-.report-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-
-.empty {
-  text-align: center;
-  color: var(--muted);
-  padding: 30px;
-}
-
-footer {
-  text-align: center;
-  color: var(--muted);
-  padding: 20px;
-}
-
-@media (max-width: 700px) {
-  .app-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .tabs {
-    grid-template-columns: 1fr 1fr;
-  }Analisi e miglioramento dell'applicazione PWA "Segnalazioni Condominio":
-
-**Punti di forza:**
-* **Funzionalità complete:** L'applicazione offre una gamma completa di funzionalità per la gestione delle segnalazioni condominiali, tra cui creazione, visualizzazione, filtraggio, modifica dello stato, eliminazione, backup e condivisione.
-* **Archiviazione locale:** L'uso di `localStorage` consente di salvare i dati localmente sul dispositivo, eliminando la necessità di un backend e garantendo la persistenza dei dati anche offline.
-* **Service Worker:** L'integrazione di un service worker consente il caching dei file dell'app, migliorando le prestazioni e consentendo l'accesso offline.
-* **Responsive Design:** L'uso di media query garantisce una visualizzazione ottimale su diversi dispositivi.
-* **Facilità di personalizzazione:** Le impostazioni dell'app sono facilmente personalizzabili tramite l'interfaccia utente.
-* **Istruzioni chiare:** Il file README fornisce istruzioni chiare su come pubblicare e personalizzare l'app.
-* **Codice commentato:** Il codice è ben commentato, facilitando la comprensione del funzionamento.
-
-**Aree di miglioramento:**
-* **Accessibilità:** L'accessibilità potrebbe essere migliorata aggiungendo etichette ARIA e attributi semantici per supportare gli utenti con disabilità.
-* **UX:** L'esperienza utente potrebbe essere migliorata fornendo feedback visivo più chiaro per le azioni dell'utente, come indicatori di caricamento per le immagini e messaggi di successo/errore più descrittivi.
-* **Sicurezza:** La sicurezza potrebbe essere migliorata implementando una migliore sanitizzazione dell'HTML per prevenire attacchi XSS.
-* **Funzionalità aggiuntive:** L'aggiunta di funzionalità come ricerca, ordinamento e commenti sulle segnalazioni potrebbe migliorare l'utilità dell'app.
-* **Documentazione:** La documentazione potrebbe essere più dettagliata, includendo informazioni su come configurare le icone e il manifest, e come gestire gli aggiornamenti dell'app.
-
-**Implementazione dei miglioramenti:**
-* **Accessibilità:** Aggiungere etichette ARIA e attributi semantici per supportare gli utenti con disabilità.
-* **UX:** Fornire feedback visivo più chiaro per le azioni dell'utente, come indicatori di caricamento per le immagini e messaggi di successo/errore più descrittivi.
-* **Sicurezza:** Implementare una migliore sanitizzazione dell'HTML per prevenire attacchi XSS.
-* **Funzionalità aggiuntive:** Aggiungere funzionalità come ricerca, ordinamento e commenti sulle segnalazioni.
-* **Documentazione:** Aggiornare il README con maggiori dettagli.
-
-**Codice aggiornato:**
-I file `index.html`, `style.css`, `app.js` e `service-worker.js` sono stati aggiornati con i miglioramenti sopra descritti. Di seguito sono riportati i codici aggiornati:
-
-**index.html:**
-```html
-<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Segnalazioni Condominio</title>
-  <meta name="theme-color" content="#0f4c81" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <header class="app-header">
-    <div class="brand">
-      <div class="logo">SC</div>
-      <div>
-        <h1 id="appTitle">Segnalazioni Condominio</h1>
-        <p id="condominioName">Gestione semplice di guasti, richieste e interventi</p>
-      </div>
-    </div>
-    <button id="installBtn" class="install-btn hidden" aria-label="Installa App">Installa App</button>
-  </header>
-
-  <main>
-    <section class="hero">
-      <h2>Segnala un problema nel condominio</h2>
-      <p>Inserisci una richiesta con foto, zona interessata, priorità e descrizione. Le segnalazioni restano salvate sul dispositivo e possono essere esportate.</p>
-      <div class="hero-actions">
-        <button onclick="showTab('newReport')" class="primary" aria-label="Nuova segnalazione">Nuova segnalazione</button>
-        <button onclick="showTab('reports')" class="secondary" aria-label="Vedi segnalazioni">Vedi segnalazioni</button>
-      </div>
-    </section>
-
-    <nav class="tabs">
-      <button class="tab active" data-tab="newReport" onclick="showTab('newReport')" aria-label="Segnala">Segnala</button>
-      <button class="tab" data-tab="reports" onclick="showTab('reports')" aria-label="Archivio">Archivio</button>
-      <button class="tab" data-tab="contacts" onclick="showTab('contacts')" aria-label="Contatti">Contatti</button>
-      <button class="tab" data-tab="settings" onclick="showTab('settings')" aria-label="Impostazioni">Impostazioni</button>
-    </nav>
-
-    <section id="newReport" class="page active" aria-labelledby="newReportTitle">
-      <div class="card">
-        <h3 id="newReportTitle">Nuova segnalazione</h3>
-        <label for="reportName">Nome condomino / interno</label>
-        <input id="reportName" placeholder="Es. Rossi - interno 7" required aria-required="true" />
-
-        <label for="reportArea">Zona interessata</label>
-        <select id="reportArea">
-          <option>Androne</option>
-          <option>Scale</option>
-          <option>Ascensore</option>
-          <option>Garage</option>
-          <option>Cortile</option>
-          <option>Terrazzo</option>
-          <option>Locale contatori</option>
-          <option>Altro</option>
-        </select>
-
-        <label for="reportType">Tipo di problema</label>
-        <select id="reportType">
-          <option>Guasto</option>
-          <option>Perdita acqua</option>
-          <option>Illuminazione</option>
-          <option>Pulizia</option>
-          <option>Sicurezza</option>
-          <option>Rumori / disturbo</option>
-          <option>Richiesta manutenzione</option>
-          <option>Altro</option>
-        </select>
-
-        <label for="reportPriority">Priorità</label>
-        <select id="reportPriority">
-          <option>Bassa</option>
-          <option>Media</option>
-          <option>Alta</option>
-          <option>Urgente</option>
-        </select>
-
-        <label for="reportDescription">Descrizione</label>
-        <textarea id="reportDescription" rows="5" placeholder="Descrivi il problema in modo chiaro..." required aria-required="true"></textarea>
-
-        <label for="reportPhoto">Foto</label>
-        <input id="reportPhoto" type="file" accept="image/*" aria-label="Carica foto" />
-        <img id="photoPreview" class="preview hidden" alt="Anteprima foto" />
-
-        <button class="primary full" onclick="saveReport()" aria-label="Salva segnalazione">Salva segnalazione</button>
-      </div>
-    </section>
-
-    <section id="reports" class="page" aria-labelledby="reportsTitle">
-      <div class="toolbar">
-        <h3 id="reportsTitle">Archivio segnalazioni</h3>
-        <div>
-          <button class="secondary" onclick="exportBackup()" aria-label="Esporta backup">Esporta backup</button>
-          <label class="import-label" for="importBackup">
-            Importa backup
-            <input id="importBackup" type="file" accept="application/json" onchange="importBackup(event)" hidden aria-label="Importa backup" />
-          </label>
-        </div>
-      </div>
-
-      <div class="filters">
-        <select id="filterStatus" onchange="renderReports()" aria-label="Filtra per stato">
-          <option value="">Tutti gli stati</option>
-          <option>Nuova</option>
-          <option>In lavorazione</option>
-          <option>Risolta</option>
-          <option>Archiviata</option>
-        </select>
-        <select id="filterPriority" onchange="renderReports()" aria-label="Filtra per priorità">
-          <option value="">Tutte le priorità</option>
-          <option>Bassa</option>
-          <option>Media</option>
-          <option>Alta</option>
-          <option>Urgente</option>
-        </select>
-      </div>
-
-      <div id="reportsList" class="reports-list"></div>
-    </section>
-
-    <section id="contacts" class="page" aria-labelledby="contactsTitle">
-      <div class="card">
-        <h3 id="contactsTitle">Contatti amministratore</h3>
-        <p><strong>Amministratore:</strong> <span id="adminNameView">Studio Condominio</span></p>
-        <p><strong>Email:</strong> <a id="adminEmailView" href="mailto:amministratore@example.com" aria-label="Invia email">amministratore@example.com</a></p>
-        <p><strong>Telefono:</strong> <a id="adminPhoneView" href="tel:+390000000000" aria-label="Chiama"></a></p>
-        <p><strong>WhatsApp:</strong> <a id="adminWhatsappView" href="#" target="_blank" aria-label="Invia messaggio WhatsApp">Invia messaggio</a></p>
-        <button class="primary full" onclick="sendEmailSummary()" aria-label="Invia riepilogo via email">Invia riepilogo via email</button>
-      </div>
-    </section>
-
-    <section id="settings" class="page" aria-labelledby="settingsTitle">
-      <div class="card">
-        <h3 id="settingsTitle">Personalizza app</h3>
-        <label for="settingAppTitle">Nome app</label>
-        <input id="settingAppTitle" />
-
-        <label for="settingCondominioName">Nome condominio</label>
-        <input id="settingCondominioName" />
-
-        <label for="settingAdminName">Nome amministratore</label>
-        <input id="settingAdminName" />
-
-        <label for="settingAdminEmail">Email amministratore</label>
-        <input id="settingAdminEmail" type="email" />
-
-        <label for="settingAdminPhone">Telefono / WhatsApp</label>
-        <input id="settingAdminPhone" type="tel" />
-
-        <button class="primary full" onclick="saveSettings()" aria-label="Salva impostazioni">Salva impostazioni</button>
-        <button class="danger full" onclick="clearAllData()" aria-label="Cancella tutti i dati">Cancella tutti i dati</button>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <p>Template PWA - Segnalazioni Condominio</p>
-  </footer>
-
-  <script src="app.js"></script>
-</body>
-</html>
