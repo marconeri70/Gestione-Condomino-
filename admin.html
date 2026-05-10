@@ -9,88 +9,88 @@
   <style>
     body { background-color: #e8f2fb; }
     #adminDashboard { display: none; grid-template-columns: 280px 1fr; height: 100vh; }
-    .sidebar { background: var(--primary-dark); color: white; padding: 30px 20px; display: flex; flex-direction: column; }
-    .sidebar h2 { margin-bottom: 5px; font-size: 22px; }
-    .sidebar p { opacity: 0.7; font-size: 14px; margin-bottom: 30px; }
-    .login-container { max-width: 400px; margin: 10vh auto; padding: 40px; text-align: center; }
+    .sidebar { background: var(--primary-dark); color: white; padding: 20px; display: flex; flex-direction: column; }
     .dashboard-content { padding: 30px; overflow-y: auto; }
-    @media (max-width: 800px) {
-      #adminDashboard { grid-template-columns: 1fr; }
-      .sidebar { height: auto; padding: 20px; }
-    }
+    .nav-v { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+    .nav-v button { text-align: left; background: rgba(255,255,255,0.1); color: white; border-radius: 8px; }
+    .nav-v button.active { background: var(--accent); color: var(--primary-dark); }
+    .admin-page { display: none; }
+    .admin-page.active { display: block; }
   </style>
 </head>
 <body>
-
   <div id="toastContainer" class="toast-container"></div>
 
-  <div id="loginScreen" class="card login-container">
-    <div class="logo" style="margin: 0 auto 20px auto;">SC</div>
-    <h2 style="margin-bottom: 20px;">Accesso Admin</h2>
-    <input type="email" id="adminEmail" placeholder="Email Amministratore" style="margin-bottom: 10px;" />
-    <input type="password" id="adminPassword" placeholder="Password" style="margin-bottom: 20px;" />
-    <button class="primary full" onclick="loginAdmin()">Accedi al Pannello</button>
-    <p id="loginError" class="hidden" style="color: var(--danger); margin-top: 15px; font-weight: bold;"></p>
+  <div id="loginScreen" class="card" style="max-width:400px; margin: 100px auto; text-align:center; padding:40px;">
+    <h2>Accesso Admin</h2>
+    <input type="email" id="adminEmail" placeholder="Email" style="margin-bottom:10px;">
+    <input type="password" id="adminPassword" placeholder="Password" style="margin-bottom:20px;">
+    <button class="primary full" onclick="loginAdmin()">Accedi</button>
   </div>
 
   <div id="adminDashboard">
     <aside class="sidebar">
-      <h2>Studio Condominio</h2>
-      <p>Centro di Controllo</p>
-      <div style="margin-top: auto;">
-        <button class="secondary full" onclick="logoutAdmin()">Disconnetti Sicuro</button>
-      </div>
+      <h2>Pannello Admin</h2>
+      <nav class="nav-v">
+        <button onclick="showAdminPage('p-reports')" id="btn-p-reports" class="active">Segnalazioni</button>
+        <button onclick="showAdminPage('p-assemblies')" id="btn-p-assemblies">Assemblee / Bacheca</button>
+        <button onclick="showAdminPage('p-settings')" id="btn-p-settings">Impostazioni</button>
+      </nav>
+      <button class="secondary full" onclick="logoutAdmin()" style="margin-top:auto;">Esci</button>
     </aside>
 
     <main class="dashboard-content">
       
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <h4>Totale Segnalazioni</h4>
-          <span id="kpi-total" class="kpi-val">0</span>
+      <section id="p-reports" class="admin-page active">
+        <div class="kpi-grid">
+           <div class="kpi-card"><h4>Totale</h4><span id="kpi-total" class="kpi-val">0</span></div>
+           <div class="kpi-card warning"><h4>Aperte</h4><span id="kpi-todo" class="kpi-val">0</span></div>
+           <div class="kpi-card danger"><h4>Urgenti</h4><span id="kpi-urgent" class="kpi-val">0</span></div>
         </div>
-        <div class="kpi-card warning">
-          <h4>In Attesa / Lavorazione</h4>
-          <span id="kpi-todo" class="kpi-val">0</span>
+        <div class="toolbar"><input type="text" id="adminSearch" placeholder="Cerca..." oninput="renderAdminReports()"></div>
+        <div id="adminReportsList" class="reports-list"></div>
+      </section>
+
+      <section id="p-assemblies" class="admin-page">
+        <div class="grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+          <div class="card">
+            <h3>Nuova Convocazione</h3>
+            <label>Titolo (es. Assemblea Ordinaria 2026)</label>
+            <input id="ass_title" placeholder="Titolo convocazione">
+            <label>Data</label><input type="date" id="ass_date">
+            <label>Ora</label><input type="time" id="ass_time">
+            <label>Luogo</label><input id="ass_location" placeholder="Sala condominiale / Online">
+            <label>Ordine del Giorno / Note</label>
+            <textarea id="ass_content" rows="6" placeholder="Punti da discutere..."></textarea>
+            <button class="primary full" onclick="publishAssembly('convocazione')">Pubblica Convocazione</button>
+          </div>
+          <div class="card">
+            <h3>Pubblica Verbale</h3>
+            <label>Titolo Verbale</label>
+            <input id="verb_title" placeholder="Verbale Assemblea 15/05">
+            <label>Testo del Verbale / Sintesi decisioni</label>
+            <textarea id="verb_content" rows="12" placeholder="Scrivi qui l'esito dell'assemblea..."></textarea>
+            <button class="primary full" onclick="publishAssembly('verbale')">Pubblica Verbale</button>
+          </div>
         </div>
-        <div class="kpi-card danger">
-          <h4>Alta Priorità / Urgenti</h4>
-          <span id="kpi-urgent" class="kpi-val">0</span>
+        <h3 style="margin-top:30px;">Storico Bacheca</h3>
+        <div id="adminAssembliesList" class="reports-list"></div>
+      </section>
+
+      <section id="p-settings" class="admin-page">
+        <div class="card" style="max-width:600px;">
+          <h3>Configurazione App</h3>
+          <label>Nome App</label><input id="admin_settingAppTitle">
+          <label>Indirizzo Condominio</label><input id="admin_settingCondominioName">
+          <label>Amministratore</label><input id="admin_settingAdminName">
+          <label>Email</label><input id="admin_settingAdminEmail">
+          <label>Telefono</label><input id="admin_settingAdminPhone">
+          <button class="primary full" onclick="saveGlobalSettings()">Salva</button>
         </div>
-      </div>
-
-      <div class="toolbar" style="margin-bottom: 20px;">
-        <h3 style="margin: 0;">Registro Segnalazioni</h3>
-        <input type="text" id="adminSearch" placeholder="🔍 Cerca per nome, guasto, zona..." oninput="renderAdminReports()" style="max-width: 350px; margin: 0;">
-      </div>
-      
-      <div id="adminReportsList" class="reports-list">
-        <p>Caricamento dati dal server...</p>
-      </div>
-
-      <hr style="margin: 50px 0; border: 1px solid #dde5ef;">
-
-      <div class="card" style="max-width: 600px;">
-        <h3>Impostazioni Globali App</h3>
-        <p style="color: var(--muted); font-size: 14px; margin-bottom: 20px;">
-          Le modifiche salvate qui aggiorneranno istantaneamente l'app sui telefoni di tutti i condomini.
-        </p>
-        <label>Nome app</label>
-        <input type="text" id="admin_settingAppTitle" />
-        <label>Sottotitolo / Info</label>
-        <input type="text" id="admin_settingCondominioName" />
-        <label>Nome Amministratore</label>
-        <input type="text" id="admin_settingAdminName" />
-        <label>Email di Contatto</label>
-        <input type="email" id="admin_settingAdminEmail" />
-        <label>Telefono / WhatsApp</label>
-        <input type="tel" id="admin_settingAdminPhone" />
-        <button class="primary full" onclick="saveGlobalSettings()">Salva e Distribuisci Dati</button>
-      </div>
+      </section>
 
     </main>
   </div>
-
   <script type="module" src="admin.js"></script>
 </body>
 </html>
