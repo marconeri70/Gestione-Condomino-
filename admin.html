@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin - Segnalazioni Condominio</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body { background-color: #e8f2fb; }
     #adminDashboard { display: none; grid-template-columns: 280px 1fr; height: 100vh; }
@@ -35,7 +36,7 @@
   <div id="adminDashboard">
     <aside class="sidebar">
       <h2>Studio Condominio</h2>
-      <p>Pannello di Controllo</p>
+      <p>Centro di Controllo</p>
       <div style="margin-top: auto;">
         <button class="secondary full" onclick="logoutAdmin()">Disconnetti Sicuro</button>
       </div>
@@ -43,21 +44,38 @@
 
     <main class="dashboard-content">
       
-      <div class="toolbar" style="margin-bottom: 20px;">
-        <h3>Gestione Segnalazioni e Chat</h3>
-      </div>
-      <div id="adminReportsList" class="reports-list">
-        <p>Caricamento dati...</p>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <h4>Totale Segnalazioni</h4>
+          <span id="kpi-total" class="kpi-val">0</span>
+        </div>
+        <div class="kpi-card warning">
+          <h4>In Attesa / Lavorazione</h4>
+          <span id="kpi-todo" class="kpi-val">0</span>
+        </div>
+        <div class="kpi-card danger">
+          <h4>Alta Priorità / Urgenti</h4>
+          <span id="kpi-urgent" class="kpi-val">0</span>
+        </div>
       </div>
 
-      <hr style="margin: 40px 0; border: 1px solid #dde5ef;">
+      <div class="toolbar" style="margin-bottom: 20px;">
+        <h3 style="margin: 0;">Registro Segnalazioni</h3>
+        <input type="text" id="adminSearch" placeholder="🔍 Cerca per nome, guasto, zona..." oninput="renderAdminReports()" style="max-width: 350px; margin: 0;">
+      </div>
+      
+      <div id="adminReportsList" class="reports-list">
+        <p>Caricamento dati dal server...</p>
+      </div>
+
+      <hr style="margin: 50px 0; border: 1px solid #dde5ef;">
 
       <div class="card" style="max-width: 600px;">
         <h3>Impostazioni Globali App</h3>
         <p style="color: var(--muted); font-size: 14px; margin-bottom: 20px;">
           Le modifiche salvate qui aggiorneranno istantaneamente l'app sui telefoni di tutti i condomini.
         </p>
-        <label>Nome app (es. Condominio Roma)</label>
+        <label>Nome app</label>
         <input type="text" id="admin_settingAppTitle" />
         <label>Sottotitolo / Info</label>
         <input type="text" id="admin_settingCondominioName" />
