@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Segnalazioni Condominio</title>
-  <meta name="theme-color" content="#0f4c81" />
+  <meta name="theme-color" content="#e6eef5" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -16,47 +16,45 @@
       <div class="logo">SC</div>
       <div>
         <h1 id="appTitle">Caricamento...</h1>
-        <p id="condominioName">Sincronizzazione...</p>
+        <p id="condominioName">Sincronizzazione in corso...</p>
       </div>
     </div>
-    <button id="installBtn" class="install-btn hidden">Installa</button>
   </header>
 
   <main class="main-content">
+    
     <section id="home" class="page active">
       <div class="hero">
         <h2 id="welcomeName">Benvenuto</h2>
-        <p>Hub digitale per la gestione del tuo condominio.</p>
+        <p>Hub digitale avanzato per il tuo condominio.</p>
       </div>
       
       <div class="card action-card" onclick="showTab('assemblies')">
         <div class="icon-circle">📢</div>
         <div>
-          <h4>Bacheca e Assemblee</h4>
-          <p>Convocazioni e Verbali ufficiali</p>
+          <h4 style="margin:0 0 5px;">Bacheca Condominio</h4>
+          <p style="margin:0; font-size:13px; color:var(--muted)">Convocazioni e Verbali ufficiali</p>
         </div>
       </div>
 
       <div class="card action-card" onclick="showTab('newReport')">
         <div class="icon-circle">➕</div>
         <div>
-          <h4>Nuova Segnalazione</h4>
-          <p>Invia un guasto o una richiesta</p>
+          <h4 style="margin:0 0 5px;">Nuova Segnalazione</h4>
+          <p style="margin:0; font-size:13px; color:var(--muted)">Invia un guasto all'amministratore</p>
         </div>
       </div>
     </section>
 
     <section id="assemblies" class="page">
-      <div class="toolbar">
-        <h3>Bacheca Condominiale</h3>
-      </div>
-      <div id="assembliesList" class="reports-list">
-        </div>
+      <h3 style="margin-left: 10px; color: var(--primary);">Bacheca Ufficiale</h3>
+      <div id="assembliesList"></div>
     </section>
 
     <section id="newReport" class="page">
       <div class="card">
-        <h3>Nuova segnalazione</h3>
+        <h3 style="margin-top:0; color:var(--primary);">Dettagli Segnalazione</h3>
+        
         <label>Nome condomino / interno</label>
         <input id="reportName" placeholder="Es. Rossi - int. 7" />
 
@@ -71,7 +69,6 @@
         <select id="reportType">
           <option>Guasto</option><option>Perdita acqua</option><option>Illuminazione</option>
           <option>Pulizia</option><option>Sicurezza</option><option>Rumori</option>
-          <option>Altro</option>
         </select>
 
         <label>Priorità</label>
@@ -79,36 +76,34 @@
           <option>Bassa</option><option>Media</option><option>Alta</option><option>Urgente</option>
         </select>
 
-        <label>Descrizione</label>
+        <label>Descrizione accurata</label>
         <textarea id="reportDescription" rows="4" placeholder="Dettagli del problema..."></textarea>
 
         <label class="file-input-label">
-          <span>📷 Scatta o allega foto</span>
+          <span>📷 Allega una fotografia</span>
           <input id="reportPhoto" type="file" accept="image/*" />
         </label>
-        <img id="photoPreview" class="preview hidden" />
+        <img id="photoPreview" class="preview hidden" style="width:100%; border-radius:16px; margin-top:15px;" />
 
-        <button class="primary full" onclick="saveReport()">Invia Segnalazione</button>
+        <button class="primary full" onclick="saveReport()">Invia Documento</button>
       </div>
     </section>
 
     <section id="reports" class="page">
-      <div class="filters-header">
-        <h3>Le tue richieste</h3>
-        <select id="filterStatus" onchange="renderReportsUI()" style="margin-bottom: 15px;">
-          <option value="">Tutti gli stati</option>
-          <option>Nuova</option><option>In lavorazione</option>
-          <option>Risolta</option>
-        </select>
-      </div>
-      <div id="reportsList" class="reports-list"></div>
+      <h3 style="margin-left: 10px; color: var(--primary);">Il tuo storico</h3>
+      <select id="filterStatus" onchange="renderReportsUI()" style="margin-bottom: 20px;">
+        <option value="">Tutti gli stati</option>
+        <option>Nuova</option><option>In lavorazione</option>
+        <option>Risolta</option>
+      </select>
+      <div id="reportsList"></div>
     </section>
 
     <section id="contacts" class="page">
       <div class="card">
-        <h3>Contatti Amministratore</h3>
-        <div id="adminContactDetails"></div>
-        <button class="secondary full" onclick="sendEmailSummary()" style="margin-top: 20px;">Email Riepilogo</button>
+        <h3 style="margin-top:0; color:var(--primary);">Amministrazione</h3>
+        <div id="adminContactDetails" style="margin-top: 20px;"></div>
+        <button class="secondary full" onclick="sendEmailSummary()">Richiedi Riepilogo Email</button>
       </div>
     </section>
   </main>
@@ -125,6 +120,9 @@
     </button>
     <button class="nav-item" data-tab="reports" onclick="showTab('reports')">
       <span class="nav-icon">📋</span><span class="nav-label">Archivio</span>
+    </button>
+    <button class="nav-item" data-tab="contacts" onclick="showTab('contacts')">
+      <span class="nav-icon">📞</span><span class="nav-label">Contatti</span>
     </button>
   </nav>
 
