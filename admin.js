@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, setDoc, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, setDoc, getDoc, addDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAaRvdsTWGCJK59lbbGzU6qnoaJrwCnaJI",
@@ -15,18 +15,14 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Cache globale per ricerca e statistiche
 let allReports = [];
-let adminSettingsCache = {};
+let adminSettings = {};
 
-window.showToast = (message, type = 'info') => {
-  const container = document.getElementById("toastContainer");
-  if(!container) return alert(message);
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.textContent = message;
-  container.appendChild(toast);
-  setTimeout(() => toast.remove(), 3500);
+window.showToast = (msg, type='info') => {
+  const c = document.getElementById("toastContainer");
+  const t = document.createElement("div");
+  t.className = `toast ${type}`; t.textContent = msg;
+  c.appendChild(t); setTimeout(() => t.remove(), 3000);
 };
 
 onAuthStateChanged(auth, (user) => {
@@ -34,6 +30,7 @@ onAuthStateChanged(auth, (user) => {
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("adminDashboard").style.display = "grid";
     listenToReports();
+    listenToAssembliesAdmin();
     loadGlobalSettingsAdmin();
   } else {
     document.getElementById("loginScreen").style.display = "block";
@@ -41,232 +38,129 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-window.loginAdmin = async () => {
-  const email = document.getElementById("adminEmail").value.trim();
-  const password = document.getElementById("adminPassword").value;
-  const errorEl = document.getElementById("loginError");
-  if(!email || !password) return;
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    errorEl.classList.add("hidden");
-  } catch (error) {
-    errorEl.textContent = "Credenziali errate o accesso negato.";
-    errorEl.classList.remove("hidden");
-  }
+window.loginAdmin = () => {
+  const e = document.getElementById("adminEmail").value;
+  const p = document.getElementById("adminPassword").value;
+  signInWithEmailAndPassword(auth, e, p).catch(() => showToast("Errore login", "error"));
 };
 
 window.logoutAdmin = () => signOut(auth);
 
-// 1. SINCRONIZZAZIONE DATI
-function listenToReports() {
-  const q = query(collection(db, "reports"), orderBy("createdAt", "desc"));
-  onSnapshot(q, (snapshot) => {
-    allReports = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-    window.renderAdminReports(); // Ricalcola tutto alla ricezione di nuovi dati
+window.showAdminPage = (id) => {
+  document.querySelectorAll(".admin-page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-v button").forEach(b => b.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.getElementById("btn-" + id).classList.add("active");
+};
+
+// --- GESTIONE ASSEMBLEE ---
+window.publishAssembly = async (type) => {
+  const isVerb = type === 'verbale';
+  const title = document.getElementById(isVerb ? 'verb_title' : 'ass_title').value;
+  const content = document.getElementById(isVerb ? 'verb_content' : 'ass_content').value;
+
+  if(!title || !content) return showToast("Titolo e contenuto mancanti", "error");
+
+  const data = {
+    type, title, content,
+    createdAt: new Date().toISOString()
+  };
+
+  if(!isVerb) {
+    data.date = document.getElementById('ass_date').value;
+    data.time = document.getElementById('ass_time').value;
+    data.location = document.getElementById('ass_location').value;
+  }
+
+  await addDoc(collection(db, "assemblies"), data);
+  showToast("Pubblicato in bacheca!", "success");
+  
+  // Reset campi
+  if(isVerb) { document.getElementById('verb_title').value = ''; document.getElementById('verb_content').value = ''; }
+  else { document.getElementById('ass_title').value = ''; document.getElementById('ass_content').value = ''; }
+};
+
+function listenToAssembliesAdmin() {
+  onSnapshot(query(collection(db, "assemblies"), orderBy("createdAt", "desc")), (snap) => {
+    const list = document.getElementById("adminAssembliesList");
+    list.innerHTML = snap.docs.map(d => {
+      const a = d.data();
+      return `<div class="card" style="border-left:5px solid ${a.type==='verbale'?'#188038':'#f2b705'}">
+        <strong>${a.type.toUpperCase()}</strong> - ${a.title}
+        <button class="danger" style="float:right; padding:5px 10px;" onclick="deleteAssembly('${d.id}')">Elimina</button>
+      </div>`;
+    }).join("");
   });
 }
 
-// 2. MOTORE DI RICERCA E ANALISI
+window.deleteAssembly = async (id) => {
+  if(confirm("Eliminare questo avviso?")) await deleteDoc(doc(db, "assemblies", id));
+};
+
+// --- GESTIONE SEGNALAZIONI (KPI e Ricerca) ---
+function listenToReports() {
+  onSnapshot(query(collection(db, "reports"), orderBy("createdAt", "desc")), (snap) => {
+    allReports = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    renderAdminReports();
+  });
+}
+
 window.renderAdminReports = () => {
-  const list = document.getElementById("adminReportsList");
-  
-  // Calcolo KPI (Statistiche Real-Time)
+  const search = document.getElementById("adminSearch").value.toLowerCase();
   document.getElementById("kpi-total").textContent = allReports.length;
-  document.getElementById("kpi-todo").textContent = allReports.filter(r => r.status === 'Nuova' || r.status === 'In lavorazione').length;
-  document.getElementById("kpi-urgent").textContent = allReports.filter(r => r.priority === 'Urgente' || r.priority === 'Alta').length;
+  document.getElementById("kpi-todo").textContent = allReports.filter(r => r.status !== 'Risolta').length;
+  document.getElementById("kpi-urgent").textContent = allReports.filter(r => r.priority === 'Urgente').length;
 
-  // Motore di Ricerca "Fuzzy"
-  const searchTerm = document.getElementById("adminSearch").value.toLowerCase().trim();
-  let filtered = allReports;
-  
-  if (searchTerm) {
-    filtered = allReports.filter(r => 
-      (r.name && r.name.toLowerCase().includes(searchTerm)) ||
-      (r.area && r.area.toLowerCase().includes(searchTerm)) ||
-      (r.type && r.type.toLowerCase().includes(searchTerm)) ||
-      (r.description && r.description.toLowerCase().includes(searchTerm)) ||
-      (r.status && r.status.toLowerCase().includes(searchTerm))
-    );
-  }
-
-  if(filtered.length === 0) {
-    list.innerHTML = "<p style='color: var(--muted)'>Nessuna segnalazione corrisponde alla ricerca.</p>";
-    return;
-  }
-
-  // Generazione Interfaccia
-  list.innerHTML = filtered.map(r => {
-    const date = new Date(r.createdAt).toLocaleString("it-IT");
-    let borderCol = r.status === 'Nuova' ? '#0f4c81' : r.status === 'In lavorazione' ? '#f2b705' : r.status === 'Risolta' ? '#16794c' : '#667085';
-    
-    const messagesHtml = (r.messages || []).map(m => `
-      <div class="msg ${m.sender === 'Amministratore' ? 'user' : 'admin'}" style="background: ${m.sender === 'Amministratore' ? 'var(--primary)' : '#e8f0fe'}; color: ${m.sender === 'Amministratore' ? 'white' : 'var(--primary-dark)'};">
-        <strong>${m.sender}</strong><br>${escapeHtml(m.text)}
-        <span class="msg-date" style="color: ${m.sender === 'Amministratore' ? '#fff' : '#666'}">${new Date(m.date).toLocaleString('it-IT', {hour: '2-digit', minute:'2-digit', day:'2-digit', month:'short'})}</span>
-      </div>
-    `).join("");
-
-    return `
-      <div class="report card" style="margin-bottom: 20px; border-left: 5px solid ${borderCol}">
-        <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
-          <div>
-            <h4 style="margin:0 0 5px 0; font-size: 18px;">${r.type} - ${r.area}</h4>
-            <p style="margin:0 0 10px 0; font-size:14px; color: #666;"><strong>${r.name}</strong> • ${date}</p>
-          </div>
-          <div style="display:flex; gap:8px;">
-            <span class="badge" style="background:#f4f7fb; padding:5px 10px; border-radius:10px;">Priorità: ${r.priority}</span>
-            <button class="secondary" style="padding: 6px 12px; font-size: 12px; border-radius: 8px;" onclick="generatePDF('${r.id}')">📄 Scarica PDF</button>
-          </div>
-        </div>
-        <p style="font-weight: 500; font-size: 15px;">${escapeHtml(r.description)}</p>
-        ${r.photo ? `<img src="${r.photo}" style="max-width:250px; border-radius:10px; display:block; margin: 10px 0; border:1px solid #eee;">` : ""}
-        
-        <div style="display:flex; gap: 10px; align-items: center; margin-top: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; flex-wrap: wrap;">
-          <select onchange="updateStatus('${r.id}', this.value)" style="width: auto; padding: 8px;">
-            <option value="Nuova" ${r.status === 'Nuova' ? 'selected' : ''}>Nuova</option>
-            <option value="In lavorazione" ${r.status === 'In lavorazione' ? 'selected' : ''}>In lavorazione</option>
-            <option value="Risolta" ${r.status === 'Risolta' ? 'selected' : ''}>Risolta</option>
-            <option value="Archiviata" ${r.status === 'Archiviata' ? 'selected' : ''}>Archiviata</option>
-          </select>
-          <button class="danger" style="padding: 8px 12px; margin:0;" onclick="deleteReport('${r.id}')">Elimina Report</button>
-        </div>
-
-        <div class="chat-box" style="margin-top: 15px;">
-          <h5 style="margin-top:0; color:var(--muted);">Comunicazioni col condomino</h5>
-          <div class="chat-history">
-            ${messagesHtml || '<p style="font-size:12px; color:var(--muted); margin:0;">Nessun messaggio.</p>'}
-          </div>
-          <div class="chat-input-group" style="margin-top: 10px;">
-            <input type="text" id="admin-chat-${r.id}" placeholder="Invia una risposta al condomino...">
-            <button class="primary" onclick="addAdminMessage('${r.id}')">Rispondi</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join("");
+  const filtered = allReports.filter(r => r.name.toLowerCase().includes(search) || r.type.toLowerCase().includes(search));
+  document.getElementById("adminReportsList").innerHTML = filtered.map(r => `
+    <div class="report card" style="border-left:5px solid ${r.status==='Risolta'?'#188038':'#0f4c81'}">
+      <h4>${r.type} - ${r.area} (${r.name})</h4>
+      <p>${r.description}</p>
+      <select onchange="updateStatus('${r.id}', this.value)">
+        <option ${r.status==='Nuova'?'selected':''}>Nuova</option>
+        <option ${r.status==='In lavorazione'?'selected':''}>In lavorazione</option>
+        <option ${r.status==='Risolta'?'selected':''}>Risolta</option>
+      </select>
+      <button class="primary" onclick="addAdminMessage('${r.id}')">Rispondi</button>
+      <button class="danger" onclick="deleteReport('${r.id}')">Elimina</button>
+      <div class="chat-history">${(r.messages || []).map(m => `<div><strong>${m.sender}:</strong> ${m.text}</div>`).join("")}</div>
+      <input type="text" id="admin-chat-${r.id}" placeholder="Scrivi al condomino...">
+    </div>
+  `).join("");
 };
 
-// 3. MOTORE ESPORTAZIONE PDF (Ordine di Lavoro)
-window.generatePDF = (id) => {
-  const r = allReports.find(x => x.id === id);
-  if(!r) return;
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  
-  // Intestazione
-  doc.setFontSize(22);
-  doc.setTextColor(15, 76, 129); // Colore Primary
-  doc.text("ORDINE DI LAVORO - TICKET INTERVENTO", 20, 20);
-  
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.text(`${adminSettingsCache.appTitle || 'Amministrazione Condominiale'}`, 20, 30);
-  doc.text(`ID Report: ${r.id}`, 20, 35);
-
-  doc.setLineWidth(0.5);
-  doc.line(20, 40, 190, 40);
-
-  // Corpo Dati
-  doc.setFontSize(12);
-  doc.setTextColor(20, 20, 20);
-  doc.text(`Data Segnalazione: ${new Date(r.createdAt).toLocaleString('it-IT')}`, 20, 50);
-  doc.text(`Condomino / Interno: ${r.name}`, 20, 60);
-  doc.text(`Zona Interessata: ${r.area}`, 20, 70);
-  doc.text(`Tipo Guasto: ${r.type}`, 20, 80);
-  
-  // Priorità e Stato (Stile bold)
-  doc.setFont("helvetica", "bold");
-  doc.text(`Priorità: ${r.priority.toUpperCase()}`, 20, 95);
-  doc.text(`Stato Attuale: ${r.status.toUpperCase()}`, 120, 95);
-  
-  doc.setFont("helvetica", "normal");
-  doc.text("Descrizione del Problema:", 20, 110);
-  const splitDesc = doc.splitTextToSize(r.description, 170);
-  doc.text(splitDesc, 20, 120);
-
-  // Calcola altezza della descrizione per posizionare la foto
-  let currentY = 120 + (splitDesc.length * 7);
-
-  // Inserimento Immagine se presente (solo JPEG nativi Base64)
-  if(r.photo && r.photo.startsWith('data:image/jpeg')) {
-    doc.text("Foto Allegata:", 20, currentY + 10);
-    try {
-      doc.addImage(r.photo, 'JPEG', 20, currentY + 15, 100, 100);
-    } catch(e) {
-      doc.text("(Impossibile renderizzare la foto nel PDF)", 20, currentY + 15);
-    }
-  }
-
-  // Chiusura Documento
-  doc.save(`OrdineLavoro_${r.area.replace(/\s+/g, '')}_${r.type.replace(/\s+/g, '')}.pdf`);
-  showToast("PDF Generato con successo", "success");
+window.addAdminMessage = async (id) => {
+  const input = document.getElementById(`admin-chat-${id}`);
+  if(!input.value) return;
+  await updateDoc(doc(db, "reports", id), {
+    messages: arrayUnion({ sender: 'Amministratore', text: input.value, date: new Date().toISOString() })
+  });
+  input.value = "";
 };
 
-// --- AZIONI AL DATABASE (Invariate) ---
-window.updateStatus = async (id, newStatus) => {
-  await updateDoc(doc(db, "reports", id), { status: newStatus });
-  showToast("Stato aggiornato!", "success");
-};
-
-window.deleteReport = async (id) => {
-  if(confirm("Eliminare definitivamente questa segnalazione?")) {
-    await deleteDoc(doc(db, "reports", id));
-    showToast("Segnalazione eliminata", "success");
-  }
-};
-
-window.addAdminMessage = async (reportId) => {
-  const input = document.getElementById(`admin-chat-${reportId}`);
-  const text = input.value.trim();
-  if (!text) return;
-  input.disabled = true;
-  try {
-    await updateDoc(doc(db, "reports", reportId), {
-      messages: arrayUnion({ sender: 'Amministratore', text: text, date: new Date().toISOString() })
-    });
-    input.value = "";
-    showToast("Risposta inviata", "success");
-  } catch (error) {
-    showToast("Errore di rete", "error");
-  } finally {
-    input.disabled = false;
-  }
-};
+window.updateStatus = async (id, s) => await updateDoc(doc(db, "reports", id), { status: s });
+window.deleteReport = async (id) => { if(confirm("Eliminare?")) await deleteDoc(doc(db, "reports", id)); };
 
 async function loadGlobalSettingsAdmin() {
-  const docSnap = await getDoc(doc(db, "settings", "global_config"));
-  if (docSnap.exists()) {
-    adminSettingsCache = docSnap.data();
-    document.getElementById("admin_settingAppTitle").value = adminSettingsCache.appTitle || "";
-    document.getElementById("admin_settingCondominioName").value = adminSettingsCache.condominioName || "";
-    document.getElementById("admin_settingAdminName").value = adminSettingsCache.adminName || "";
-    document.getElementById("admin_settingAdminEmail").value = adminSettingsCache.adminEmail || "";
-    document.getElementById("admin_settingAdminPhone").value = adminSettingsCache.adminPhone || "";
+  const snap = await getDoc(doc(db, "settings", "global_config"));
+  if(snap.exists()) {
+    const s = snap.data();
+    document.getElementById("admin_settingAppTitle").value = s.appTitle;
+    document.getElementById("admin_settingCondominioName").value = s.condominioName;
+    document.getElementById("admin_settingAdminName").value = s.adminName;
+    document.getElementById("admin_settingAdminEmail").value = s.adminEmail;
+    document.getElementById("admin_settingAdminPhone").value = s.adminPhone;
   }
 }
 
 window.saveGlobalSettings = async () => {
-  const btn = document.querySelector("button[onclick='saveGlobalSettings()']");
-  btn.textContent = "Salvataggio...";
-  const newSettings = {
-    appTitle: document.getElementById("admin_settingAppTitle").value.trim(),
-    condominioName: document.getElementById("admin_settingCondominioName").value.trim(),
-    adminName: document.getElementById("admin_settingAdminName").value.trim(),
-    adminEmail: document.getElementById("admin_settingAdminEmail").value.trim(),
-    adminPhone: document.getElementById("admin_settingAdminPhone").value.trim()
+  const data = {
+    appTitle: document.getElementById("admin_settingAppTitle").value,
+    condominioName: document.getElementById("admin_settingCondominioName").value,
+    adminName: document.getElementById("admin_settingAdminName").value,
+    adminEmail: document.getElementById("admin_settingAdminEmail").value,
+    adminPhone: document.getElementById("admin_settingAdminPhone").value
   };
-  try {
-    await setDoc(doc(db, "settings", "global_config"), newSettings);
-    showToast("Impostazioni distribuite ai client", "success");
-    adminSettingsCache = newSettings;
-  } catch (error) {
-    showToast("Errore di autorizzazione", "error");
-  } finally {
-    btn.textContent = "Salva e Distribuisci Dati";
-  }
+  await setDoc(doc(db, "settings", "global_config"), data);
+  showToast("Impostazioni salvate!", "success");
 };
-
-function escapeHtml(text) {
-  return String(text).replace(/[&<>"']/g, match => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[match]));
-}
