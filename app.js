@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, where, onSnapshot, orderBy, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, where, onSnapshot, orderBy, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAaRvdsTWGCJK59lbbGzU6qnoaJrwCnaJI",
@@ -19,7 +19,6 @@ let currentUserUid = null;
 let myReports = [];
 let adminEmailCache = "";
 
-// --- SISTEMA TOAST (Nuovo) ---
 window.showToast = (message, type = 'info') => {
   const container = document.getElementById("toastContainer");
   const toast = document.createElement("div");
@@ -29,7 +28,6 @@ window.showToast = (message, type = 'info') => {
   setTimeout(() => toast.remove(), 3500);
 };
 
-// --- AUTH & INITIALIZATION ---
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUserUid = user.uid;
@@ -58,6 +56,9 @@ function listenToGlobalSettings() {
         document.getElementById("adminPhoneView").textContent = s.adminPhone;
         document.getElementById("adminPhoneView").href = `tel:${s.adminPhone}`;
     }
+    if(document.getElementById("adminWhatsappView")) {
+        document.getElementById("adminWhatsappView").href = `https://wa.me/${s.adminPhone.replace(/\D/g, "")}`;
+    }
   });
 }
 
@@ -65,7 +66,6 @@ window.addEventListener("load", () => {
   listenToGlobalSettings();
 });
 
-// --- UI LOGIC ---
 window.showTab = (tabId) => {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.querySelectorAll(".nav-item").forEach(t => t.classList.remove("active"));
@@ -78,7 +78,6 @@ window.showTab = (tabId) => {
   window.scrollTo(0, 0);
 };
 
-// --- DATABASE OPERATIONS ---
 window.saveReport = async () => {
   const name = document.getElementById("reportName").value.trim();
   const description = document.getElementById("reportDescription").value.trim();
@@ -87,7 +86,7 @@ window.saveReport = async () => {
 
   const btn = document.querySelector("#newReport button.primary");
   btn.disabled = true;
-  btn.textContent = "Invio...";
+  btn.textContent = "Invio in corso...";
 
   try {
     await addDoc(collection(db, "reports"), {
@@ -98,6 +97,7 @@ window.saveReport = async () => {
       type: document.getElementById("reportType").value,
       priority: document.getElementById("reportPriority").value,
       status: "Nuova",
+      messages: [], // Array inizializzato per la chat
       photo: document.getElementById("photoPreview").src.startsWith("data:") ? document.getElementById("photoPreview").src : ""
     });
 
@@ -119,10 +119,34 @@ function listenToMyReports() {
   onSnapshot(q, (snapshot) => {
     myReports = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
     window.renderReportsUI();
-  }, (err) => {
-    if(err.code === 'failed-precondition') showToast("Configurazione database...", "info");
   });
 }
+
+// LOGICA CHAT: Aggiunta nuovo messaggio
+window.addMessage = async (reportId) => {
+  const input = document.getElementById(`chat-input-${reportId}`);
+  const text = input.value.trim();
+  if (!text) return;
+
+  const btn = input.nextElementSibling;
+  input.disabled = true; btn.disabled = true;
+
+  try {
+    await updateDoc(doc(db, "reports", reportId), {
+      messages: arrayUnion({
+        sender: 'Condomino',
+        text: text,
+        date: new Date().toISOString()
+      })
+    });
+    input.value = "";
+  } catch (error) {
+    console.error(error);
+    showToast("Impossibile inviare il messaggio", "error");
+  } finally {
+    input.disabled = false; btn.disabled = false;
+  }
+};
 
 window.renderReportsUI = () => {
   const list = document.getElementById("reportsList");
@@ -136,25 +160,45 @@ window.renderReportsUI = () => {
     return;
   }
 
-  list.innerHTML = filtered.map(r => `
-    <article class="report ${r.priority === 'Urgente' ? 'urgent' : ''} ${r.status === 'Risolta' ? 'done' : ''}">
-      <div class="report-head">
-        <div>
-          <h3>${r.type} - ${r.area}</h3>
-          <p style="font-size: 12px; color: var(--muted)">${new Date(r.createdAt).toLocaleString("it-IT")}</p>
+  list.innerHTML = filtered.map(r => {
+    // Generazione dinamica della cronologia messaggi
+    const messagesHtml = (r.messages || []).map(m => `
+      <div class="msg ${m.sender === 'Amministratore' ? 'admin' : 'user'}">
+        <strong>${m.sender}</strong><br>${escapeHtml(m.text)}
+        <span class="msg-date">${new Date(m.date).toLocaleString('it-IT', {hour: '2-digit', minute:'2-digit', day:'2-digit', month:'short'})}</span>
+      </div>
+    `).join("");
+
+    return `
+      <article class="report card ${r.priority === 'Urgente' ? 'urgent' : ''} ${r.status === 'Risolta' ? 'done' : ''}">
+        <div class="report-head">
+          <div>
+            <h3 style="margin: 0 0 5px 0;">${r.type} - ${r.area}</h3>
+            <p style="font-size: 12px; margin: 0; color: var(--muted)">${new Date(r.createdAt).toLocaleString("it-IT")}</p>
+          </div>
         </div>
-      </div>
-      <div class="badges">
-        <span class="badge">${r.priority}</span>
-        <span class="badge" style="background: #e7f3ff; color: #007bff">${r.status}</span>
-      </div>
-      <p style="margin: 10px 0">${r.description}</p>
-      ${r.photo ? `<img src="${r.photo}" style="width:100%; border-radius:10px;">` : ""}
-    </article>
-  `).join("");
+        <div class="badges">
+          <span class="badge">${r.priority}</span>
+          <span class="badge" style="background: #e7f3ff; color: #007bff">${r.status}</span>
+        </div>
+        <p style="margin: 10px 0 font-weight: 600;">${escapeHtml(r.description)}</p>
+        ${r.photo ? `<img src="${r.photo}" style="width:100%; border-radius:10px; margin-bottom: 10px;">` : ""}
+        
+        <div class="chat-box">
+          <div class="chat-history">
+            ${messagesHtml || '<p style="text-align:center; font-size:12px; color:var(--muted); margin:0;">Nessun messaggio.</p>'}
+          </div>
+          <div class="chat-input-group">
+            <input type="text" id="chat-input-${r.id}" placeholder="Rispondi all'amministratore...">
+            <button class="primary" onclick="addMessage('${r.id}')">Invia</button>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
 };
 
-// --- UTILS ---
+// Utils
 document.getElementById("reportPhoto")?.addEventListener("change", (e) => {
   const reader = new FileReader();
   reader.onload = (ev) => {
@@ -172,6 +216,10 @@ document.getElementById("reportPhoto")?.addEventListener("change", (e) => {
   };
   reader.readAsDataURL(e.target.files[0]);
 });
+
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, match => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[match]));
+}
 
 window.sendEmailSummary = () => {
   const body = myReports.map(r => `- ${r.area}: ${r.status}`).join("\n");
