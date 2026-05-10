@@ -2,126 +2,156 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Segnalazioni Condominio</title>
   <meta name="theme-color" content="#0f4c81" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div id="toastContainer" class="toast-container"></div>
+
   <header class="app-header">
     <div class="brand">
       <div class="logo">SC</div>
       <div>
-        <h1 id="appTitle">Segnalazioni Condominio</h1>
-        <p id="condominioName">Caricamento impostazioni...</p>
+        <h1 id="appTitle">Caricamento...</h1>
+        <p id="condominioName">Sincronizzazione in corso...</p>
       </div>
     </div>
-    <button id="installBtn" class="install-btn hidden">Installa App</button>
+    <button id="installBtn" class="install-btn hidden">Installa</button>
   </header>
 
-  <main>
-    <section class="hero">
-      <h2>Segnala un problema</h2>
-      <p>Inserisci una richiesta con foto, zona, priorità e descrizione. Segui lo stato della tua segnalazione in tempo reale.</p>
-      <div class="hero-actions">
-        <button onclick="showTab('newReport')" class="primary">Nuova segnalazione</button>
-        <button onclick="showTab('reports')" class="secondary">Le mie segnalazioni</button>
+  <main class="main-content">
+    <section id="home" class="page active">
+      <div class="hero">
+        <h2>Benvenuto</h2>
+        <p>Gestisci le segnalazioni del tuo condominio in modo rapido e trasparente.</p>
+      </div>
+      
+      <div class="card action-card" onclick="showTab('newReport')">
+        <div class="icon-circle">➕</div>
+        <div>
+          <h4>Nuova Segnalazione</h4>
+          <p>Invia un guasto all'amministratore</p>
+        </div>
+      </div>
+
+      <div class="card action-card" onclick="showTab('reports')">
+        <div class="icon-circle">📂</div>
+        <div>
+          <h4>Archivio Personale</h4>
+          <p>Controlla lo stato dei tuoi interventi</p>
+        </div>
       </div>
     </section>
 
-    <nav class="tabs">
-      <button class="tab active" data-tab="newReport" onclick="showTab('newReport')">Segnala</button>
-      <button class="tab" data-tab="reports" onclick="showTab('reports')">Archivio Personale</button>
-      <button class="tab" data-tab="contacts" onclick="showTab('contacts')">Contatti</button>
-    </nav>
-
-    <section id="newReport" class="page active">
+    <section id="newReport" class="page">
       <div class="card">
         <h3>Nuova segnalazione</h3>
         <label>Nome condomino / interno</label>
-        <input id="reportName" placeholder="Es. Rossi - interno 7" />
+        <input id="reportName" placeholder="Es. Rossi - int. 7" />
 
         <label>Zona interessata</label>
         <select id="reportArea">
-          <option>Androne</option>
-          <option>Scale</option>
-          <option>Ascensore</option>
-          <option>Garage</option>
-          <option>Cortile</option>
-          <option>Terrazzo</option>
-          <option>Locale contatori</option>
-          <option>Altro</option>
+          <option>Androne</option><option>Scale</option><option>Ascensore</option>
+          <option>Garage</option><option>Cortile</option><option>Terrazzo</option>
+          <option>Locale contatori</option><option>Altro</option>
         </select>
 
         <label>Tipo di problema</label>
         <select id="reportType">
-          <option>Guasto</option>
-          <option>Perdita acqua</option>
-          <option>Illuminazione</option>
-          <option>Pulizia</option>
-          <option>Sicurezza</option>
-          <option>Rumori / disturbo</option>
-          <option>Richiesta manutenzione</option>
-          <option>Altro</option>
+          <option>Guasto</option><option>Perdita acqua</option><option>Illuminazione</option>
+          <option>Pulizia</option><option>Sicurezza</option><option>Rumori</option>
+          <option>Manutenzione</option><option>Altro</option>
         </select>
 
         <label>Priorità</label>
         <select id="reportPriority">
-          <option>Bassa</option>
-          <option>Media</option>
-          <option>Alta</option>
-          <option>Urgente</option>
+          <option>Bassa</option><option>Media</option><option>Alta</option><option>Urgente</option>
         </select>
 
         <label>Descrizione</label>
-        <textarea id="reportDescription" rows="5" placeholder="Descrivi il problema in modo chiaro..."></textarea>
+        <textarea id="reportDescription" rows="4" placeholder="Dettagli del problema..."></textarea>
 
-        <label>Foto</label>
-        <input id="reportPhoto" type="file" accept="image/*" />
-        <img id="photoPreview" class="preview hidden" alt="Anteprima foto" />
+        <label class="file-input-label">
+          <span>📷 Scatta o allega foto</span>
+          <input id="reportPhoto" type="file" accept="image/*" />
+        </label>
+        <img id="photoPreview" class="preview hidden" />
 
-        <button class="primary full" onclick="saveReport()">Invia all'amministratore</button>
+        <button class="primary full" onclick="saveReport()">Invia Segnalazione</button>
       </div>
     </section>
 
     <section id="reports" class="page">
-      <div class="toolbar">
-        <h3>Le mie segnalazioni</h3>
-      </div>
-
-      <div class="filters">
-        <select id="filterStatus" onchange="renderReportsUI()">
-          <option value="">Tutti gli stati</option>
-          <option>Nuova</option>
-          <option>In lavorazione</option>
-          <option>Risolta</option>
-          <option>Archiviata</option>
-        </select>
-        <select id="filterPriority" onchange="renderReportsUI()">
-          <option value="">Tutte le priorità</option>
-          <option>Bassa</option>
-          <option>Media</option>
-          <option>Alta</option>
-          <option>Urgente</option>
-        </select>
-      </div>
-
-      <div id="reportsList" class="reports-list">
+      <div class="filters-header">
+        <h3>Le tue richieste</h3>
+        <div class="filters-row">
+          <select id="filterStatus" onchange="renderReportsUI()">
+            <option value="">Tutti gli stati</option>
+            <option>Nuova</option><option>In lavorazione</option>
+            <option>Risolta</option><option>Archiviata</option>
+          </select>
         </div>
+      </div>
+      <div id="reportsList" class="reports-list"></div>
     </section>
 
     <section id="contacts" class="page">
       <div class="card">
-        <h3>Contatti amministratore</h3>
-        <p><strong>Amministratore:</strong> <span id="adminNameView">Caricamento...</span></p>
-        <p><strong>Email:</strong> <a id="adminEmailView" href="#">Caricamento...</a></p>
-        <p><strong>Telefono:</strong> <a id="adminPhoneView" href="#">Caricamento...</a></p>
-        <p><strong>WhatsApp:</strong> <a id="adminWhatsappView" href="#" target="_blank">Invia messaggio</a></p>
-        <button class="primary full" onclick="sendEmailSummary()">Invia riepilogo via email</button>
+        <h3>Contatti Amministratore</h3>
+        <div class="contact-item">
+          <span class="icon">👤</span>
+          <div>
+            <p class="label">Amministratore</p>
+            <p id="adminNameView" class="value">-</p>
+          </div>
+        </div>
+        <div class="contact-item">
+          <span class="icon">📧</span>
+          <div>
+            <p class="label">Email</p>
+            <a id="adminEmailView" href="#" class="value">-</a>
+          </div>
+        </div>
+        <div class="contact-item">
+          <span class="icon">📞</span>
+          <div>
+            <p class="label">Telefono</p>
+            <a id="adminPhoneView" href="#" class="value">-</a>
+          </div>
+        </div>
+        <div class="contact-item">
+          <span class="icon">💬</span>
+          <div>
+            <p class="label">WhatsApp</p>
+            <a id="adminWhatsappView" href="#" target="_blank" class="value">Apri Chat</a>
+          </div>
+        </div>
+        <button class="secondary full" onclick="sendEmailSummary()" style="margin-top: 20px;">Email Riepilogo</button>
       </div>
     </section>
   </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="home" onclick="showTab('home')">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" data-tab="newReport" onclick="showTab('newReport')">
+      <span class="nav-icon">➕</span>
+      <span class="nav-label">Segnala</span>
+    </button>
+    <button class="nav-item" data-tab="reports" onclick="showTab('reports')">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">Archivio</span>
+    </button>
+    <button class="nav-item" data-tab="contacts" onclick="showTab('contacts')">
+      <span class="nav-icon">📞</span>
+      <span class="nav-label">Contatti</span>
+    </button>
+  </nav>
 
   <script type="module" src="app.js"></script>
 </body>
