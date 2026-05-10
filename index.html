@@ -16,7 +16,7 @@
       <div class="logo">SC</div>
       <div>
         <h1 id="appTitle">Caricamento...</h1>
-        <p id="condominioName">Sincronizzazione in corso...</p>
+        <p id="condominioName">Sincronizzazione...</p>
       </div>
     </div>
     <button id="installBtn" class="install-btn hidden">Installa</button>
@@ -25,25 +25,33 @@
   <main class="main-content">
     <section id="home" class="page active">
       <div class="hero">
-        <h2>Benvenuto</h2>
-        <p>Gestisci le segnalazioni del tuo condominio in modo rapido e trasparente.</p>
+        <h2 id="welcomeName">Benvenuto</h2>
+        <p>Hub digitale per la gestione del tuo condominio.</p>
       </div>
       
+      <div class="card action-card" onclick="showTab('assemblies')">
+        <div class="icon-circle">📢</div>
+        <div>
+          <h4>Bacheca e Assemblee</h4>
+          <p>Convocazioni e Verbali ufficiali</p>
+        </div>
+      </div>
+
       <div class="card action-card" onclick="showTab('newReport')">
         <div class="icon-circle">➕</div>
         <div>
           <h4>Nuova Segnalazione</h4>
-          <p>Invia un guasto all'amministratore</p>
+          <p>Invia un guasto o una richiesta</p>
         </div>
       </div>
+    </section>
 
-      <div class="card action-card" onclick="showTab('reports')">
-        <div class="icon-circle">📂</div>
-        <div>
-          <h4>Archivio Personale</h4>
-          <p>Controlla lo stato dei tuoi interventi</p>
-        </div>
+    <section id="assemblies" class="page">
+      <div class="toolbar">
+        <h3>Bacheca Condominiale</h3>
       </div>
+      <div id="assembliesList" class="reports-list">
+        </div>
     </section>
 
     <section id="newReport" class="page">
@@ -63,7 +71,7 @@
         <select id="reportType">
           <option>Guasto</option><option>Perdita acqua</option><option>Illuminazione</option>
           <option>Pulizia</option><option>Sicurezza</option><option>Rumori</option>
-          <option>Manutenzione</option><option>Altro</option>
+          <option>Altro</option>
         </select>
 
         <label>Priorità</label>
@@ -87,13 +95,11 @@
     <section id="reports" class="page">
       <div class="filters-header">
         <h3>Le tue richieste</h3>
-        <div class="filters-row" style="margin-bottom: 15px;">
-          <select id="filterStatus" onchange="renderReportsUI()">
-            <option value="">Tutti gli stati</option>
-            <option>Nuova</option><option>In lavorazione</option>
-            <option>Risolta</option><option>Archiviata</option>
-          </select>
-        </div>
+        <select id="filterStatus" onchange="renderReportsUI()" style="margin-bottom: 15px;">
+          <option value="">Tutti gli stati</option>
+          <option>Nuova</option><option>In lavorazione</option>
+          <option>Risolta</option>
+        </select>
       </div>
       <div id="reportsList" class="reports-list"></div>
     </section>
@@ -101,34 +107,7 @@
     <section id="contacts" class="page">
       <div class="card">
         <h3>Contatti Amministratore</h3>
-        <div class="contact-item">
-          <span class="icon">👤</span>
-          <div>
-            <p class="label">Amministratore</p>
-            <p id="adminNameView" class="value">-</p>
-          </div>
-        </div>
-        <div class="contact-item">
-          <span class="icon">📧</span>
-          <div>
-            <p class="label">Email</p>
-            <a id="adminEmailView" href="#" class="value">-</a>
-          </div>
-        </div>
-        <div class="contact-item">
-          <span class="icon">📞</span>
-          <div>
-            <p class="label">Telefono</p>
-            <a id="adminPhoneView" href="#" class="value">-</a>
-          </div>
-        </div>
-        <div class="contact-item">
-          <span class="icon">💬</span>
-          <div>
-            <p class="label">WhatsApp</p>
-            <a id="adminWhatsappView" href="#" target="_blank" class="value">Apri Chat</a>
-          </div>
-        </div>
+        <div id="adminContactDetails"></div>
         <button class="secondary full" onclick="sendEmailSummary()" style="margin-top: 20px;">Email Riepilogo</button>
       </div>
     </section>
@@ -136,20 +115,16 @@
 
   <nav class="bottom-nav">
     <button class="nav-item active" data-tab="home" onclick="showTab('home')">
-      <span class="nav-icon">🏠</span>
-      <span class="nav-label">Home</span>
+      <span class="nav-icon">🏠</span><span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" data-tab="assemblies" onclick="showTab('assemblies')">
+      <span class="nav-icon">📢</span><span class="nav-label">Bacheca</span>
     </button>
     <button class="nav-item" data-tab="newReport" onclick="showTab('newReport')">
-      <span class="nav-icon">➕</span>
-      <span class="nav-label">Segnala</span>
+      <span class="nav-icon">➕</span><span class="nav-label">Segnala</span>
     </button>
     <button class="nav-item" data-tab="reports" onclick="showTab('reports')">
-      <span class="nav-icon">📋</span>
-      <span class="nav-label">Archivio</span>
-    </button>
-    <button class="nav-item" data-tab="contacts" onclick="showTab('contacts')">
-      <span class="nav-icon">📞</span>
-      <span class="nav-label">Contatti</span>
+      <span class="nav-icon">📋</span><span class="nav-label">Archivio</span>
     </button>
   </nav>
 
