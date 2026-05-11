@@ -44,20 +44,30 @@ function listenToGlobalSettings() {
   onSnapshot(doc(db, "settings", "global_config"), (docSnap) => {
     adminSettings = docSnap.exists() ? docSnap.data() : {};
     document.getElementById("appTitle").textContent = adminSettings.appTitle || "Condominio";
-    document.getElementById("condominioName").textContent = adminSettings.condominioName || "Sincronizzazione...";
+    document.getElementById("condominioName").textContent = adminSettings.condominioName || "Sistema Attivo";
     
     const contactsHtml = `
-      <p><strong>Amministratore:</strong> ${adminSettings.adminName || '-'}</p>
-      <p><strong>Email:</strong> <a href="mailto:${adminSettings.adminEmail}">${adminSettings.adminEmail || '-'}</a></p>
-      <p><strong>Telefono:</strong> <a href="tel:${adminSettings.adminPhone}">${adminSettings.adminPhone || '-'}</a></p>
-      <p><strong>WhatsApp:</strong> <a href="https://wa.me/${(adminSettings.adminPhone || '').replace(/\D/g, '')}" target="_blank">Apri Chat</a></p>
+      <div style="background: var(--bg); box-shadow: var(--shadow-in); padding: 15px; border-radius: 16px; margin-bottom: 10px;">
+        <p style="margin:0; font-size: 13px; color: var(--muted)">Nome Studio</p>
+        <p style="margin:0; font-weight: 700;">${adminSettings.adminName || '-'}</p>
+      </div>
+      <div style="background: var(--bg); box-shadow: var(--shadow-in); padding: 15px; border-radius: 16px; margin-bottom: 10px;">
+        <p style="margin:0; font-size: 13px; color: var(--muted)">Email Diretta</p>
+        <p style="margin:0; font-weight: 700;"><a href="mailto:${adminSettings.adminEmail}" style="color:var(--primary); text-decoration:none;">${adminSettings.adminEmail || '-'}</a></p>
+      </div>
+      <div style="background: var(--bg); box-shadow: var(--shadow-in); padding: 15px; border-radius: 16px; margin-bottom: 15px;">
+        <p style="margin:0; font-size: 13px; color: var(--muted)">Telefono / WhatsApp</p>
+        <p style="margin:0; font-weight: 700;">
+          <a href="tel:${adminSettings.adminPhone}" style="color:var(--text); text-decoration:none;">${adminSettings.adminPhone || '-'}</a>
+        </p>
+      </div>
+      <button class="primary full" onclick="window.open('https://wa.me/${(adminSettings.adminPhone || '').replace(/\D/g, "")}', '_blank')">Apri Chat WhatsApp</button>
     `;
     const container = document.getElementById("adminContactDetails");
     if(container) container.innerHTML = contactsHtml;
   });
 }
 
-// --- ASCOLTO ASSEMBLEE (Nuovo) ---
 function listenToAssemblies() {
   const q = query(collection(db, "assemblies"), orderBy("createdAt", "desc"));
   onSnapshot(q, (snapshot) => {
@@ -73,18 +83,18 @@ function listenToAssemblies() {
       const a = docSnap.data();
       const isVerbale = a.type === 'verbale';
       return `
-        <article class="card" style="border-top: 5px solid ${isVerbale ? '#188038' : '#f2b705'}">
+        <article class="card" style="border-left: 5px solid ${isVerbale ? 'var(--success)' : 'var(--accent)'}">
           <div style="display:flex; justify-content:space-between; align-items:start;">
-             <span class="badge" style="background:${isVerbale ? '#e6f4ea' : '#fef7e0'}; color:${isVerbale ? '#188038' : '#b05e00'}">
+             <span class="badge" style="color:${isVerbale ? 'var(--success)' : '#b05e00'}">
                 ${isVerbale ? '📄 VERBALE' : '📅 CONVOCAZIONE'}
              </span>
              <small style="color:var(--muted)">${new Date(a.createdAt).toLocaleDateString()}</small>
           </div>
-          <h3 style="margin:10px 0 5px 0;">${escapeHtml(a.title)}</h3>
+          <h3 style="margin:15px 0 5px 0;">${escapeHtml(a.title)}</h3>
           <p style="white-space: pre-wrap; font-size:14px;">${escapeHtml(a.content)}</p>
-          ${!isVerbale ? `<div style="background:#f1f3f4; padding:10px; border-radius:8px; margin-top:10px; font-size:13px;">
-             <strong>Data:</strong> ${a.date} ore ${a.time}<br>
-             <strong>Luogo:</strong> ${a.location}
+          ${!isVerbale ? `<div style="background:var(--bg); box-shadow:var(--shadow-in); padding:15px; border-radius:12px; margin-top:15px; font-size:14px;">
+             <strong style="color:var(--primary)">Data:</strong> ${a.date} ore ${a.time}<br>
+             <strong style="color:var(--primary)">Luogo:</strong> ${a.location}
           </div>` : ''}
         </article>
       `;
@@ -124,10 +134,13 @@ window.saveReport = async () => {
   };
 
   addDoc(collection(db, "reports"), payload);
-  showToast("Segnalazione inviata!", "success");
+  showToast("Segnalazione salvata nel database!", "success");
+  
   document.getElementById("reportName").value = "";
   document.getElementById("reportDescription").value = "";
   document.getElementById("photoPreview").classList.add("hidden");
+  
+  // Porta l'utente all'archivio dove vedrà il tasto WhatsApp
   window.showTab("reports");
   btn.disabled = false;
 };
@@ -139,6 +152,15 @@ function listenToMyReports() {
     window.renderReportsUI();
   });
 }
+
+// --- NUOVO: PONTE WHATSAPP ---
+window.notifyAdminWhatsApp = (type, area) => {
+  const phone = (adminSettings.adminPhone || '').replace(/\D/g, "");
+  if (!phone) return showToast("Numero amministratore non configurato", "error");
+
+  const text = `🚨 *Nuova Segnalazione Condominio*%0A%0A*Guasto:* ${escapeHtml(type)}%0A*Zona:* ${escapeHtml(area)}%0A%0A_Ho appena inserito i dettagli e la foto sull'app. Attendo riscontro, grazie._`;
+  window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
+};
 
 window.addMessage = (reportId) => {
   const input = document.getElementById(`chat-input-${reportId}`);
@@ -153,15 +175,32 @@ window.addMessage = (reportId) => {
 window.renderReportsUI = () => {
   const list = document.getElementById("reportsList");
   if (!list) return;
-  list.innerHTML = myReports.map(r => `
-    <article class="report card ${r.priority === 'Urgente' ? 'urgent' : ''} ${r.status === 'Risolta' ? 'done' : ''}">
-      <h3>${r.type} - ${r.area}</h3>
-      <div class="badges"><span class="badge">${r.priority}</span> <span class="badge" style="background:#e7f3ff">${r.status}</span></div>
-      <p style="margin:10px 0;">${escapeHtml(r.description)}</p>
-      ${r.photo ? `<img src="${r.photo}" style="width:100%; border-radius:10px; margin-bottom:10px;">` : ""}
+  const statusFilter = document.getElementById("filterStatus").value;
+  let filtered = statusFilter ? myReports.filter(r => r.status === statusFilter) : myReports;
+  
+  if (filtered.length === 0) { list.innerHTML = `<div class="empty">Nessuna segnalazione.</div>`; return; }
+
+  list.innerHTML = filtered.map(r => `
+    <article class="card">
+      <h3 style="margin-top:0; color:var(--primary);">${r.type} - ${r.area}</h3>
+      <div class="badges">
+        <span class="badge priority-${r.priority}">${r.priority}</span> 
+        <span class="badge status-${r.status}">${r.status}</span>
+      </div>
+      <p style="margin:15px 0;">${escapeHtml(r.description)}</p>
+      ${r.photo ? `<img src="${r.photo}" style="width:100%; border-radius:16px; margin-bottom:15px;">` : ""}
+      
+      ${r.status === 'Nuova' ? `
+        <button style="background: linear-gradient(135deg, #25D366, #128C7E); color: white; width: 100%; margin-top: 5px; margin-bottom: 20px; border-radius: 16px; padding: 14px; font-weight: 800; border: none; box-shadow: 0 10px 20px rgba(37, 211, 102, 0.3); cursor: pointer;" onclick="notifyAdminWhatsApp('${r.type}', '${r.area}')">
+          💬 Avvisa l'Amministratore
+        </button>
+      ` : ''}
+
       <div class="chat-box">
-        <div class="chat-history">${(r.messages || []).map(m => `<div class="msg ${m.sender==='Amministratore'?'admin':'user'}"><strong>${m.sender}</strong><br>${escapeHtml(m.text)}</div>`).join("")}</div>
-        <div class="chat-input-group"><input type="text" id="chat-input-${r.id}" placeholder="Rispondi..."><button onclick="addMessage('${r.id}')">Invia</button></div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+           ${(r.messages || []).map(m => `<div class="msg ${m.sender==='Amministratore'?'admin':'user'}"><strong>${m.sender}</strong><br>${escapeHtml(m.text)}</div>`).join("")}
+        </div>
+        <div class="chat-input-group"><input type="text" id="chat-input-${r.id}" placeholder="Scrivi..."><button onclick="addMessage('${r.id}')">Invia</button></div>
       </div>
     </article>
   `).join("");
