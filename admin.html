@@ -3,26 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - Segnalazioni Condominio</title>
+  <title>Pannello Studio - SaaS</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    body { background-color: #e8f2fb; }
-    #adminDashboard { display: none; grid-template-columns: 280px 1fr; height: 100vh; }
-    .sidebar { background: var(--primary-dark); color: white; padding: 20px; display: flex; flex-direction: column; }
-    .dashboard-content { padding: 30px; overflow-y: auto; }
-    .nav-v { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-    .nav-v button { text-align: left; background: rgba(255,255,255,0.1); color: white; border-radius: 8px; }
-    .nav-v button.active { background: var(--accent); color: var(--primary-dark); }
-    .admin-page { display: none; }
-    .admin-page.active { display: block; }
-  </style>
 </head>
 <body>
   <div id="toastContainer" class="toast-container"></div>
 
-  <div id="loginScreen" class="card" style="max-width:400px; margin: 100px auto; text-align:center; padding:40px;">
-    <h2>Accesso Admin</h2>
+  <div id="loginScreen" class="card login-container">
+    <div class="logo" style="margin: 0 auto 20px auto;">SC</div>
+    <h2>Accesso Studio</h2>
     <input type="email" id="adminEmail" placeholder="Email" style="margin-bottom:10px;">
     <input type="password" id="adminPassword" placeholder="Password" style="margin-bottom:20px;">
     <button class="primary full" onclick="loginAdmin()">Accedi</button>
@@ -30,7 +20,8 @@
 
   <div id="adminDashboard">
     <aside class="sidebar">
-      <h2>Pannello Admin</h2>
+      <h2>Pannello Studio</h2>
+      <p id="displayTenantId" style="color: var(--primary); font-weight: bold; margin-bottom: 20px;"></p>
       <nav class="nav-v">
         <button onclick="showAdminPage('p-reports')" id="btn-p-reports" class="active">Segnalazioni</button>
         <button onclick="showAdminPage('p-assemblies')" id="btn-p-assemblies">Assemblee / Bacheca</button>
@@ -40,36 +31,31 @@
     </aside>
 
     <main class="dashboard-content">
-      
       <section id="p-reports" class="admin-page active">
         <div class="kpi-grid">
            <div class="kpi-card"><h4>Totale</h4><span id="kpi-total" class="kpi-val">0</span></div>
-           <div class="kpi-card warning"><h4>Aperte</h4><span id="kpi-todo" class="kpi-val">0</span></div>
-           <div class="kpi-card danger"><h4>Urgenti</h4><span id="kpi-urgent" class="kpi-val">0</span></div>
+           <div class="kpi-card"><h4>Aperte</h4><span id="kpi-todo" class="kpi-val">0</span></div>
+           <div class="kpi-card"><h4>Urgenti</h4><span id="kpi-urgent" class="kpi-val">0</span></div>
         </div>
-        <div class="toolbar"><input type="text" id="adminSearch" placeholder="Cerca..." oninput="renderAdminReports()"></div>
+        <input type="text" id="adminSearch" placeholder="Cerca guasto o condomino..." oninput="renderAdminReports()" style="margin-bottom: 20px;">
         <div id="adminReportsList" class="reports-list"></div>
       </section>
 
       <section id="p-assemblies" class="admin-page">
-        <div class="grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
           <div class="card">
             <h3>Nuova Convocazione</h3>
-            <label>Titolo (es. Assemblea Ordinaria 2026)</label>
-            <input id="ass_title" placeholder="Titolo convocazione">
+            <label>Titolo</label><input id="ass_title">
             <label>Data</label><input type="date" id="ass_date">
             <label>Ora</label><input type="time" id="ass_time">
-            <label>Luogo</label><input id="ass_location" placeholder="Sala condominiale / Online">
-            <label>Ordine del Giorno / Note</label>
-            <textarea id="ass_content" rows="6" placeholder="Punti da discutere..."></textarea>
+            <label>Luogo</label><input id="ass_location">
+            <label>Ordine del Giorno</label><textarea id="ass_content" rows="4"></textarea>
             <button class="primary full" onclick="publishAssembly('convocazione')">Pubblica Convocazione</button>
           </div>
           <div class="card">
             <h3>Pubblica Verbale</h3>
-            <label>Titolo Verbale</label>
-            <input id="verb_title" placeholder="Verbale Assemblea 15/05">
-            <label>Testo del Verbale / Sintesi decisioni</label>
-            <textarea id="verb_content" rows="12" placeholder="Scrivi qui l'esito dell'assemblea..."></textarea>
+            <label>Titolo Verbale</label><input id="verb_title">
+            <label>Testo / Sintesi</label><textarea id="verb_content" rows="11"></textarea>
             <button class="primary full" onclick="publishAssembly('verbale')">Pubblica Verbale</button>
           </div>
         </div>
@@ -79,16 +65,16 @@
 
       <section id="p-settings" class="admin-page">
         <div class="card" style="max-width:600px;">
-          <h3>Configurazione App</h3>
-          <label>Nome App</label><input id="admin_settingAppTitle">
-          <label>Indirizzo Condominio</label><input id="admin_settingCondominioName">
-          <label>Amministratore</label><input id="admin_settingAdminName">
-          <label>Email</label><input id="admin_settingAdminEmail">
-          <label>Telefono</label><input id="admin_settingAdminPhone">
-          <button class="primary full" onclick="saveGlobalSettings()">Salva</button>
+          <h3>Configurazione Profilo Studio</h3>
+          <p style="color:var(--muted); font-size:14px;">Questi dati appariranno nell'app di tutti i condomini collegati al tuo Codice Studio.</p>
+          <label>Nome App (es. Studio Rossi)</label><input id="admin_settingAppTitle">
+          <label>Info / Slogan</label><input id="admin_settingCondominioName">
+          <label>Nome Amministratore</label><input id="admin_settingAdminName">
+          <label>Email Pubblica</label><input id="admin_settingAdminEmail">
+          <label>Telefono / WhatsApp (formato +39...)</label><input id="admin_settingAdminPhone">
+          <button class="primary full" onclick="saveGlobalSettings()">Salva Dati Studio</button>
         </div>
       </section>
-
     </main>
   </div>
   <script type="module" src="admin.js"></script>
