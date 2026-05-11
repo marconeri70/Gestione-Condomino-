@@ -82,7 +82,7 @@ main { padding: 20px 15px; max-width: 600px; margin: 0 auto; }
 .hero { text-align: center; margin-bottom: 30px; padding: 10px; }
 .hero h2 { font-size: 26px; color: var(--primary); margin-bottom: 10px; }
 
-/* Action Cards (Bottoni Home) */
+/* Action Cards */
 .action-card {
   display: flex; align-items: center; gap: 20px;
   cursor: pointer; transition: all 0.2s ease;
@@ -94,7 +94,7 @@ main { padding: 20px 15px; max-width: 600px; margin: 0 auto; }
   display: grid; place-items: center; font-size: 22px;
 }
 
-/* --- FORMS (INCAVATI) --- */
+/* --- FORMS --- */
 label { display: block; font-weight: 700; margin: 20px 0 8px; font-size: 14px; color: var(--muted); }
 input, select, textarea {
   width: 100%; padding: 15px; border-radius: 16px;
@@ -116,7 +116,7 @@ input:focus, select:focus, textarea:focus {
 .file-input-label:active { box-shadow: var(--shadow-in); }
 .file-input-label input { display: none; }
 
-/* --- BUTTONS (POPPING OUT) --- */
+/* --- BUTTONS --- */
 button {
   border: 0; border-radius: 16px; padding: 16px 20px;
   font-weight: 800; font-size: 15px; cursor: pointer; transition: all 0.2s ease;
@@ -131,6 +131,7 @@ button {
 
 .secondary { background: var(--bg); color: var(--primary); box-shadow: var(--shadow-out); }
 .secondary:active { box-shadow: var(--shadow-in); }
+.danger { background: var(--danger); color: white; box-shadow: var(--shadow-out); }
 
 .full { width: 100%; margin-top: 25px; }
 
@@ -151,11 +152,11 @@ button {
 .msg.admin { background: var(--bg); color: var(--text); border-bottom-left-radius: 4px; align-self: flex-start; }
 .msg.user { background: var(--primary); color: white; border-bottom-right-radius: 4px; align-self: flex-end; box-shadow: 0 4px 10px rgba(15,76,129,0.2); }
 .chat-input-group { display: flex; gap: 10px; margin-top: 15px; }
-.chat-input-group input { border-radius: 20px; padding: 12px 20px; }
-.chat-input-group button { border-radius: 20px; padding: 12px 24px; box-shadow: var(--shadow-out); background: var(--bg); color: var(--primary); }
+.chat-input-group input { border-radius: 20px; padding: 12px 20px; margin:0; }
+.chat-input-group button { border-radius: 20px; padding: 12px 24px; box-shadow: var(--shadow-out); background: var(--bg); color: var(--primary); margin:0;}
 .chat-input-group button:active { box-shadow: var(--shadow-in); }
 
-/* --- GLASSMORPHISM BOTTOM NAV (5 ICONE) --- */
+/* --- GLASSMORPHISM BOTTOM NAV --- */
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
   height: var(--nav-height); 
@@ -191,3 +192,17 @@ button {
 }
 @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 .hidden { display: none !important; }
+
+/* Layout Admin */
+#adminDashboard { display: none; grid-template-columns: 280px 1fr; height: 100vh; }
+.sidebar { background: var(--bg); padding: 30px 20px; display: flex; flex-direction: column; border-right: 2px solid rgba(255,255,255,0.5); }
+.dashboard-content { padding: 30px; overflow-y: auto; }
+.nav-v { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+.nav-v button { text-align: left; background: var(--bg); color: var(--text); box-shadow: var(--shadow-out); }
+.nav-v button.active { box-shadow: var(--shadow-in); color: var(--primary); }
+.admin-page { display: none; }
+.admin-page.active { display: block; }
+.login-container { max-width: 400px; margin: 10vh auto; text-align: center; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+.kpi-card { background: var(--bg); padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow-out); text-align: center; }
+.kpi-val { font-size: 42px; font-weight: 900; color: var(--primary); }
