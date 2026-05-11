@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, where, onSnapshot, orderBy, doc, updateDoc, arrayUnion, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, where, onSnapshot, orderBy, doc, updateDoc, arrayUnion, enableIndexedDbPersistence, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAaRvdsTWGCJK59lbbGzU6qnoaJrwCnaJI",
@@ -20,6 +20,7 @@ enableIndexedDbPersistence(db).catch(() => {});
 let currentUserUid = null;
 let myReports = [];
 let adminSettings = {};
+let currentTenantId = localStorage.getItem("tenantId");
 
 window.showToast = (message, type = 'info') => {
   const container = document.getElementById("toastContainer");
@@ -33,15 +34,59 @@ window.showToast = (message, type = 'info') => {
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUserUid = user.uid;
-    listenToMyReports();
-    listenToAssemblies();
+    if(currentTenantId) bootSystem();
   } else {
     signInAnonymously(auth);
   }
 });
 
+window.addEventListener("load", () => {
+  if(currentTenantId && currentUserUid) {
+    document.getElementById("gate").classList.remove("active");
+    bootSystem();
+  } else {
+    document.getElementById("bottomNav")?.classList.add("hidden");
+    document.getElementById("mainHeader").classList.add("hidden");
+  }
+});
+
+window.validateAndEnter = async () => {
+  const code = document.getElementById("tenantCodeInput").value.trim().toUpperCase();
+  if(!code) return showToast("Inserisci un codice valido", "error");
+  
+  const btn = document.querySelector("#gate button.primary");
+  btn.textContent = "Verifica in corso...";
+  
+  try {
+    const docSnap = await getDoc(doc(db, "settings", code));
+    if (docSnap.exists()) {
+      localStorage.setItem("tenantId", code);
+      currentTenantId = code;
+      showToast("Accesso Autorizzato", "success");
+      document.getElementById("gate").classList.remove("active");
+      bootSystem();
+    } else {
+      showToast("Codice Studio non trovato.", "error");
+      btn.textContent = "Entra nel Sistema";
+    }
+  } catch (e) {
+    showToast("Errore di rete.", "error");
+    btn.textContent = "Entra nel Sistema";
+  }
+};
+
+function bootSystem() {
+  document.getElementById("bottomNav").classList.remove("hidden");
+  document.getElementById("mainHeader").classList.remove("hidden");
+  showTab("home");
+  listenToGlobalSettings();
+  listenToMyReports();
+  listenToAssemblies();
+}
+
 function listenToGlobalSettings() {
-  onSnapshot(doc(db, "settings", "global_config"), (docSnap) => {
+  if(!currentTenantId) return;
+  onSnapshot(doc(db, "settings", currentTenantId), (docSnap) => {
     adminSettings = docSnap.exists() ? docSnap.data() : {};
     document.getElementById("appTitle").textContent = adminSettings.appTitle || "Condominio";
     document.getElementById("condominioName").textContent = adminSettings.condominioName || "Sistema Attivo";
@@ -50,10 +95,6 @@ function listenToGlobalSettings() {
       <div style="background: var(--bg); box-shadow: var(--shadow-in); padding: 15px; border-radius: 16px; margin-bottom: 10px;">
         <p style="margin:0; font-size: 13px; color: var(--muted)">Nome Studio</p>
         <p style="margin:0; font-weight: 700;">${adminSettings.adminName || '-'}</p>
-      </div>
-      <div style="background: var(--bg); box-shadow: var(--shadow-in); padding: 15px; border-radius: 16px; margin-bottom: 10px;">
-        <p style="margin:0; font-size: 13px; color: var(--muted)">Email Diretta</p>
-        <p style="margin:0; font-weight: 700;"><a href="mailto:${adminSettings.adminEmail}" style="color:var(--primary); text-decoration:none;">${adminSettings.adminEmail || '-'}</a></p>
       </div>
       <div style="background: var(--bg); box-shadow: var(--shadow-in); padding: 15px; border-radius: 16px; margin-bottom: 15px;">
         <p style="margin:0; font-size: 13px; color: var(--muted)">Telefono / WhatsApp</p>
@@ -69,15 +110,12 @@ function listenToGlobalSettings() {
 }
 
 function listenToAssemblies() {
-  const q = query(collection(db, "assemblies"), orderBy("createdAt", "desc"));
+  if(!currentTenantId) return;
+  const q = query(collection(db, "assemblies"), where("tenantId", "==", currentTenantId), orderBy("createdAt", "desc"));
   onSnapshot(q, (snapshot) => {
     const list = document.getElementById("assembliesList");
     if(!list) return;
-    
-    if(snapshot.empty) {
-      list.innerHTML = `<div class="empty">Nessun avviso in bacheca.</div>`;
-      return;
-    }
+    if(snapshot.empty) { list.innerHTML = `<div class="empty">Nessun avviso in bacheca.</div>`; return; }
 
     list.innerHTML = snapshot.docs.map(docSnap => {
       const a = docSnap.data();
@@ -85,9 +123,7 @@ function listenToAssemblies() {
       return `
         <article class="card" style="border-left: 5px solid ${isVerbale ? 'var(--success)' : 'var(--accent)'}">
           <div style="display:flex; justify-content:space-between; align-items:start;">
-             <span class="badge" style="color:${isVerbale ? 'var(--success)' : '#b05e00'}">
-                ${isVerbale ? '📄 VERBALE' : '📅 CONVOCAZIONE'}
-             </span>
+             <span class="badge" style="color:${isVerbale ? 'var(--success)' : '#b05e00'}">${isVerbale ? '📄 VERBALE' : '📅 CONVOCAZIONE'}</span>
              <small style="color:var(--muted)">${new Date(a.createdAt).toLocaleDateString()}</small>
           </div>
           <h3 style="margin:15px 0 5px 0;">${escapeHtml(a.title)}</h3>
@@ -101,8 +137,6 @@ function listenToAssemblies() {
     }).join("");
   });
 }
-
-window.addEventListener("load", () => listenToGlobalSettings());
 
 window.showTab = (tabId) => {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
@@ -123,6 +157,7 @@ window.saveReport = async () => {
   btn.disabled = true;
 
   const payload = {
+    tenantId: currentTenantId,
     uid: currentUserUid,
     createdAt: new Date().toISOString(),
     name, description,
@@ -140,24 +175,22 @@ window.saveReport = async () => {
   document.getElementById("reportDescription").value = "";
   document.getElementById("photoPreview").classList.add("hidden");
   
-  // Porta l'utente all'archivio dove vedrà il tasto WhatsApp
   window.showTab("reports");
   btn.disabled = false;
 };
 
 function listenToMyReports() {
-  const q = query(collection(db, "reports"), where("uid", "==", currentUserUid), orderBy("createdAt", "desc"));
+  if(!currentTenantId) return;
+  const q = query(collection(db, "reports"), where("tenantId", "==", currentTenantId), where("uid", "==", currentUserUid), orderBy("createdAt", "desc"));
   onSnapshot(q, (snapshot) => {
     myReports = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
     window.renderReportsUI();
   });
 }
 
-// --- NUOVO: PONTE WHATSAPP ---
 window.notifyAdminWhatsApp = (type, area) => {
   const phone = (adminSettings.adminPhone || '').replace(/\D/g, "");
   if (!phone) return showToast("Numero amministratore non configurato", "error");
-
   const text = `🚨 *Nuova Segnalazione Condominio*%0A%0A*Guasto:* ${escapeHtml(type)}%0A*Zona:* ${escapeHtml(area)}%0A%0A_Ho appena inserito i dettagli e la foto sull'app. Attendo riscontro, grazie._`;
   window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
 };
@@ -191,7 +224,7 @@ window.renderReportsUI = () => {
       ${r.photo ? `<img src="${r.photo}" style="width:100%; border-radius:16px; margin-bottom:15px;">` : ""}
       
       ${r.status === 'Nuova' ? `
-        <button style="background: linear-gradient(135deg, #25D366, #128C7E); color: white; width: 100%; margin-top: 5px; margin-bottom: 20px; border-radius: 16px; padding: 14px; font-weight: 800; border: none; box-shadow: 0 10px 20px rgba(37, 211, 102, 0.3); cursor: pointer;" onclick="notifyAdminWhatsApp('${r.type}', '${r.area}')">
+        <button class="primary full" style="margin-top: 5px; margin-bottom: 20px;" onclick="notifyAdminWhatsApp('${r.type}', '${r.area}')">
           💬 Avvisa l'Amministratore
         </button>
       ` : ''}
@@ -223,10 +256,7 @@ document.getElementById("reportPhoto")?.addEventListener("change", (e) => {
   reader.readAsDataURL(e.target.files[0]);
 });
 
-function escapeHtml(text) {
-  return String(text).replace(/[&<>"']/g, match => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[match]));
-}
-
+function escapeHtml(text) { return String(text).replace(/[&<>"']/g, match => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[match])); }
 window.sendEmailSummary = () => {
   const body = myReports.map(r => `- ${r.area}: ${r.status}`).join("\n");
   window.location.href = `mailto:${adminSettings.adminEmail}?subject=Riepilogo&body=${encodeURIComponent(body)}`;
