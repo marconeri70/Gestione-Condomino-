@@ -11,7 +11,7 @@
 <body>
   <div id="toastContainer" class="toast-container"></div>
 
-  <header class="app-header">
+  <header class="app-header hidden" id="mainHeader">
     <div class="brand">
       <div class="logo">SC</div>
       <div>
@@ -23,9 +23,19 @@
 
   <main class="main-content">
     
-    <section id="home" class="page active">
+    <section id="gate" class="page active" style="text-align: center; margin-top: 50px;">
+      <div class="logo" style="width: 80px; height: 80px; font-size: 30px; margin: 0 auto 20px;">SC</div>
+      <h2 style="color: var(--primary);">Benvenuto</h2>
+      <p style="color: var(--muted); margin-bottom: 30px;">Inserisci il codice del tuo Studio di Amministrazione per accedere all'area riservata del tuo palazzo.</p>
+      
+      <input type="text" id="tenantCodeInput" placeholder="Codice Studio (es. ROSSI2026)" style="text-transform: uppercase; text-align: center; font-weight: bold; font-size: 20px; margin-bottom: 20px;" />
+      <button class="primary full" onclick="validateAndEnter()">Entra nel Sistema</button>
+      <button class="secondary full" style="margin-top: 20px; font-size: 13px;" onclick="alert('Richiedi il codice esatto al tuo amministratore.')">Non hai il codice?</button>
+    </section>
+
+    <section id="home" class="page">
       <div class="hero">
-        <h2 id="welcomeName">Benvenuto</h2>
+        <h2 id="welcomeName">Area Riservata</h2>
         <p>Hub digitale avanzato per il tuo condominio.</p>
       </div>
       
@@ -108,7 +118,7 @@
     </section>
   </main>
 
-  <nav class="bottom-nav">
+  <nav class="bottom-nav hidden" id="bottomNav">
     <button class="nav-item active" data-tab="home" onclick="showTab('home')">
       <span class="nav-icon">🏠</span><span class="nav-label">Home</span>
     </button>
